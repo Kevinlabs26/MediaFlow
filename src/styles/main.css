@@ -2959,7 +2959,7 @@ html[data-theme="light"] .model-btn-primary {
 .hero-content {
     position: relative;
     z-index: 1;
-    max-width: 650px;
+    max-width: 700px;
     margin: 0 auto;
     text-align: center;
 }
@@ -3013,7 +3013,8 @@ html[data-theme="light"] .model-btn-primary {
 }
 
 .hero-input-wrapper {
-    max-width: 560px;
+    max-width: 680px;
+    width: 100%;
     margin: 0 auto;
 }
 
@@ -3038,7 +3039,8 @@ html[data-theme="light"] .model-btn-primary {
     background: transparent !important;
     box-shadow: none !important;
     flex: 1;
-    padding: 14px 16px !important;
+    padding: 15px 18px !important;
+    font-size: 15px !important;
 }
 
 .btn-hero {
