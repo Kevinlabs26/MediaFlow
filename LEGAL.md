@@ -2,7 +2,7 @@
 
 ## License
 
-**MediaFlow is free and open source software** released under the **GNU GPLv3 License** (see `LICENSE`). There are no paid editions, no license keys, and no feature locks.
+**MediaFlow is free and open source software** released under the **MIT License** (see `LICENSE`). There are no paid editions, no license keys, and no feature locks.
 
 If you find MediaFlow useful, you are welcome to support the project via donation at https://mediaflowing.com/donate — donations are voluntary and do not unlock anything; every feature is already available to everyone.
 

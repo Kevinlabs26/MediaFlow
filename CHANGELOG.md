@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.5] - 2026-08-23
+
+### Changed
+- **License switched from GPLv3 to MIT** to maximize adoption and reuse. Updated `LICENSE`, `package.json`, `package-lock.json`, `README.md`, and `LEGAL.md`. No paid editions, license keys, or feature locks remain; the app stays fully free and open source.
+
 ## [2.4.4] - 2026-08-18
 
 ### Changed

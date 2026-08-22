@@ -25,7 +25,7 @@
         "bin:download": "node scripts/download-binaries.js"
     },
     "author": "MediaFlow",
-    "license": "GPL-3.0-only",
+    "license": "MIT",
     "dependencies": {
         "archiver": "^7.0.1",
         "axios": "^1.13.2",

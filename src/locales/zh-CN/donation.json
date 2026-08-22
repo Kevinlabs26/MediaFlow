@@ -22,7 +22,7 @@
     "github": "GitHub 开源仓库",
     "title": "支持 MediaFlow",
     "badge_free": "永久免费",
-    "badge_opensource": "GPLv3 开源",
+    "badge_opensource": "MIT 开源",
     "badge_nolock": "无功能锁定",
     "promptMessage": "MediaFlow 对所有人免费开放。如果它帮到了你，可以支持一下项目 ☕",
     "promptSupport": "支持项目",
