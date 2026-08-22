@@ -159,7 +159,6 @@
     "loadingFeature": {
       "generic": "Загрузка…",
       "enhance": "Загрузка AI Enhance…",
-      "editor": "Загрузка редактора…",
       "subtitle": "Загрузка студии субтитров…",
       "creator": "Загрузка инструментов Creator…"
     }

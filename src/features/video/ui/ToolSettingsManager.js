@@ -20,7 +20,6 @@ class ToolSettingsManager {
     init() {
         this.setupCropEvents();
         this.setupVerticalEvents();
-        this.setupSpeedEvents();
     }
 
 
@@ -76,20 +75,6 @@ class ToolSettingsManager {
             this._triggerCropPreview();
         });
         btnApplyCrop?.addEventListener('click', () => this.uiManager.app.videoProcessor?.cropVideo());
-    }
-
-    /**
-     * 变速事件绑定 (实时预览模式)
-     */
-    setupSpeedEvents() {
-        const { speedSlider, speedValue } = this.uiManager.elements;
-        if (!speedSlider) return;
-
-        speedSlider.addEventListener('input', (e) => {
-            const speed = parseFloat(e.target.value);
-            if (speedValue) speedValue.textContent = `${speed.toFixed(1)}x`;
-            this.uiManager.app.timelineManager?.updateSelectedSegmentSpeed(speed);
-        });
     }
 
     _handleCropRatioChange() {
@@ -285,7 +270,7 @@ class ToolSettingsManager {
     /**
      * 显示特定类型的属性面板 (回填数据)
      */
-    showProperties(type, data) {
+    showProperties(type) {
         const { btnPropertiesTab } = this.uiManager.elements;
 
         // 1. 确保属性标签可见并激活
@@ -295,24 +280,15 @@ class ToolSettingsManager {
         // 2. 根据类型显示具体的 Section
         let sectionIds = [];
         if (type === 'video') {
-            sectionIds = ['prop-section-speed', 'prop-section-crop'];
+            sectionIds = ['prop-section-crop'];
         } else if (type === 'audio') {
             sectionIds = ['prop-section-audio'];
-        } else if (type === 'transition') {
-            sectionIds = ['prop-section-transition'];
         }
 
         // 执行显隐过滤，这会自动隐藏属性页面的“空白引导”
         this.uiManager.showOnlySections(sectionIds);
 
         // 3. 回填数据
-        if (type === 'video' && data?.speed) this.updateSpeedUI(data.speed);
-    }
-
-    updateSpeedUI(speed) {
-        const { speedSlider, speedValue } = this.uiManager.elements;
-        if (speedSlider) speedSlider.value = speed;
-        if (speedValue) speedValue.textContent = `${speed.toFixed(1)}x`;
     }
 
     /**

@@ -50,7 +50,6 @@ t('creator.denoise.engineDeepfilter', 'DeepFilterNet AI');
 t('creator.watermark.typeText', 'Text');
 t('creator.segment.defaultName', 'Segment {index}');
 t('creator.transform.cropDesktop', '16:9 (Desktop)');
-t('creator.export.typeVideoAudio', 'Video + Audio');
 
 // --- download ---
 t('download.pause', 'Pause');

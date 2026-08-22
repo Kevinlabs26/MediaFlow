@@ -2739,12 +2739,6 @@ input:checked+.toggle-track .toggle-thumb {
     font-weight: bold;
 }
 
-/* 轨道隐藏逻辑 */
-.mode-quick .creator-timeline-workspace,
-.mode-quick .inspector-aside-pro {
-    display: none !important;
-}
-
 /* 4. 响应式：针对小屏进一步压缩高度 */
 @media (max-width: 1200px) {
     .mode-quick .quick-tools-grid {

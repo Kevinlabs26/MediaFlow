@@ -139,7 +139,6 @@
 #page-creator .glass-panel,
 #page-creator .pro-monitor,
 #page-creator .inspector-aside-pro,
-#page-creator .timeline-section-pro,
 #page-creator .modal-content,
 #page-creator .creator-dialog {
     backdrop-filter: none !important;
@@ -329,8 +328,7 @@ html[data-theme="dark"] .btn-primary {
 
 /* ---------- Mono sliders / progress (no blue thumbs) ---------- */
 input[type="range"],
-.pro-slider-tiny,
-.editor-zoom-control input[type="range"] {
+.pro-slider-tiny {
     accent-color: var(--text-primary) !important;
 }
 

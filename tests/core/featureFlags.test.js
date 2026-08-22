@@ -13,14 +13,13 @@ describe('FeatureFlags (fully free / open source)', () => {
         expect(flags.PAGES).toEqual(expect.arrayContaining([
             'download',
             'creator',
-            'editor',
             'subtitle',
             'mobile',
             'donation',
             'settings',
             'enhance'
         ]));
-        expect(flags.isAllowedPage('editor')).toBe(true);
+        expect(flags.isAllowedPage('editor')).toBe(false);
         expect(flags.isAllowedPage('donation')).toBe(true);
         expect(flags.isAllowedPage('download')).toBe(true);
     });

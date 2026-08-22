@@ -159,7 +159,6 @@
     "loadingFeature": {
       "generic": "Chargement…",
       "enhance": "Chargement AI Enhance…",
-      "editor": "Chargement de l’éditeur…",
       "subtitle": "Chargement du studio sous-titres…",
       "creator": "Chargement des outils Creator…"
     }

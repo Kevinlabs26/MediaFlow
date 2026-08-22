@@ -49,40 +49,6 @@ describe('FeatureLoader.ensureEnhance', () => {
         expect(window.ScriptLoader.loadScripts).not.toHaveBeenCalled();
     });
 
-    test('ensureEditor loads scripts, constructs EditorFlow, and inits once', async () => {
-        delete window.editorFlow;
-        delete window.EditorFlow;
-
-        window.ScriptLoader.loadScripts = jest.fn().mockImplementation(async () => {
-            class FakeEditor {
-                constructor(app) {
-                    this.app = app;
-                }
-                async init() {
-                    this.inited = true;
-                }
-                renderCurrentState() {}
-            }
-            window.EditorFlow = FakeEditor;
-        });
-
-        const app = { id: 'app-1' };
-        const flow = await window.FeatureLoader.ensureEditor(app);
-        expect(window.ScriptLoader.loadScripts).toHaveBeenCalledWith(
-            expect.arrayContaining(['features/editor/EditorFlow.js'])
-        );
-        expect(flow).toBeTruthy();
-        expect(flow.app).toBe(app);
-        expect(flow.inited).toBe(true);
-        expect(flow._featureLoaderInited).toBe(true);
-        expect(window.editorFlow).toBe(flow);
-        expect(app.editorFlow).toBe(flow);
-
-        const again = await window.FeatureLoader.ensureEditor(app);
-        expect(again).toBe(flow);
-        expect(window.ScriptLoader.loadScripts).toHaveBeenCalledTimes(1);
-    });
-
     test('ensureSubtitle loads scripts, constructs SubtitleFlow, and inits once', async () => {
         delete window.subtitleFlow;
         delete window.SubtitleFlow;
@@ -143,7 +109,7 @@ describe('FeatureLoader.ensureEnhance', () => {
         expect(window.ScriptLoader.loadScripts).toHaveBeenCalledWith(
             expect.arrayContaining([
                 'features/video/CreatorFlow.js',
-                'features/video/export/CreatorExportPlanner.js'
+                'features/video/VideoProcessor.js'
             ])
         );
         expect(flow).toBeTruthy();

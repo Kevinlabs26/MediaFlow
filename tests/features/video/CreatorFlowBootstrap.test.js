@@ -5,30 +5,37 @@ describe('CreatorFlowBootstrap', () => {
         require('../../../src/features/video/flow/core/CreatorFlowBootstrap');
     });
 
-    it('binds timeline seek events to preview and paused audio sync', () => {
-        const snapshot = { audio: [] };
-        const flow = {
-            timelineManager: { currentTime: 12.5 },
-            previewHandler: {
-                seekTo: jest.fn(),
-                alignPlaybackToTimeline: jest.fn(),
-                getPlaybackSnapshot: jest.fn(() => snapshot)
-            },
-            audioMixer: {
-                sync: jest.fn()
+    it('initializes quick tools without requiring timeline modules', () => {
+        document.body.innerHTML = '<button id="btn-reset-video"></button>';
+        window.i18n = { updateUI: jest.fn() };
+        window.SilenceProcessor = class {
+            init = jest.fn();
+        };
+        window.VideoProcessor = class {
+            init = jest.fn();
+        };
+        window.BatchCreatorFlow = class {
+            constructor() {
+                this.batchFiles = [];
             }
+            init = jest.fn();
+        };
+
+        const flow = {
+            uiManager: { init: jest.fn() },
+            previewHandler: { init: jest.fn() },
+            audioHandler: { init: jest.fn() },
+            loadGlobalSettings: jest.fn(),
+            reset: jest.fn()
         };
 
         const bootstrap = new window.CreatorFlowBootstrap(flow);
-        bootstrap.bindTimelinePreviewSync();
+        bootstrap.init();
 
-        expect(typeof flow.timelineManager.onSeek).toBe('function');
-
-        flow.timelineManager.onSeek(5.0, 7.25);
-
-        expect(flow.previewHandler.seekTo).toHaveBeenCalledWith(7.25);
-        expect(flow.previewHandler.alignPlaybackToTimeline).toHaveBeenCalledTimes(1);
-        expect(flow.previewHandler.getPlaybackSnapshot).toHaveBeenCalledWith(12.5);
-        expect(flow.audioMixer.sync).toHaveBeenCalledWith(12.5, false, snapshot);
+        expect(flow.uiManager.init).toHaveBeenCalledTimes(1);
+        expect(flow.previewHandler.init).toHaveBeenCalledTimes(1);
+        expect(flow.audioHandler.init).toHaveBeenCalledTimes(1);
+        expect(flow.videoProcessor).toBeInstanceOf(window.VideoProcessor);
+        expect(flow.batchFlow).toBeInstanceOf(window.BatchCreatorFlow);
     });
 });

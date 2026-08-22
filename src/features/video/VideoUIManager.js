@@ -13,7 +13,6 @@ class VideoUIManager {
      */
     init() {
         // [重构保护] 一键竖屏按钮 (btn-make-vertical) 的事件已移至 ToolSettingsManager.js，避免重复绑定
-        // [旧版遗留] 导出按钮事件已迁移至 CreatorExportManager.js
         // document.getElementById('btn-export-merged')?.addEventListener('click', () => this.controller.smartClip({ merge: true }));
         // document.getElementById('btn-export-separate')?.addEventListener('click', () => this.controller.smartClip({ merge: false }));
 
@@ -27,8 +26,6 @@ class VideoUIManager {
         document.getElementById('btn-create-gif')?.addEventListener('click', () => this.controller.generateGif());
         document.getElementById('btn-create-gif-final')?.addEventListener('click', () => this.controller.generateGif());
         document.getElementById('btn-start-watermark')?.addEventListener('click', () => this.controller.addWatermark());
-        document.getElementById('btn-export-separate-pro')?.addEventListener('click', () => this.controller.smartClip({ merge: false }));
-        document.getElementById('btn-export-merged-pro')?.addEventListener('click', () => this.controller.smartClip({ merge: true }));
         this.setupWatermarkListeners();
 
         // 属性面板变换工具绑定
@@ -38,8 +35,6 @@ class VideoUIManager {
 
         document.getElementById('btn-reveal-file')?.addEventListener('click', () => this.revealFile());
 
-        this.setupSpeedAndGIFListeners();
-        this.setupTransitionListeners();
         this.setupUtilityListeners();
         this.loadLastSettings(); // 🆕 加载上次使用的参数
     }
@@ -264,44 +259,6 @@ class VideoUIManager {
 
         const estMsg = window.i18n?.t('creator.toasts.estSizeMsg', { size: estSize, ratio: ratio }) || `Est. Output: ~${estSize} MB (Reduced ${ratio}%)`;
         estDisp.innerHTML = `<i class="fa-solid fa-chart-line" style="margin-right: 4px;"></i> ${estMsg}`;
-    }
-
-    setupSpeedAndGIFListeners() {
-        // 项目面板中的压缩/格式转换等监听已保留
-        document.getElementById('btn-create-gif')?.addEventListener('click', () => this.controller.generateGif());
-
-        // [重构] 变速逻辑已移至 ToolSettingsManager.js 进行实时预览处理
-    }
-
-    setupTransitionListeners() {
-        const select = document.getElementById('prop-transition-type');
-        if (select && window.TransitionManager) {
-            window.TransitionManager.initSelect('prop-transition-type');
-
-            select.addEventListener('change', (e) => {
-                window.TransitionManager.updatePreview('prop-transition-preview', e.target.value);
-            });
-        }
-
-        document.getElementById('btn-prop-apply-transition')?.addEventListener('click', () => {
-            const type = document.getElementById('prop-transition-type')?.value;
-            const duration = parseFloat(document.getElementById('prop-transition-duration')?.value) || 1.0;
-            if (!type) return;
-            this.controller.applyTransition(type, duration);
-        });
-    }
-
-    updateTransitionPanel(transition = { id: 'none', duration: 1.0 }) {
-        const select = document.getElementById('prop-transition-type');
-        const durInput = document.getElementById('prop-transition-duration');
-
-        if (select) {
-            select.value = transition.id || 'none';
-            window.TransitionManager?.updatePreview('prop-transition-preview', select.value);
-        }
-        if (durInput) {
-            durInput.value = transition.duration || 1.0;
-        }
     }
 
     /**

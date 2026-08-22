@@ -10,20 +10,7 @@
                         data-i18n="creator.title">快捷视频工具</span></h2>
             </div>
 
-            <div class="header-center" style="display: flex; gap: 12px; align-items: center;">
-                <div class="task-buttons" style="display: flex; gap: 8px;">
-                    <button class="btn btn-primary" id="btn-creator-export-dialog">
-                        <i class="fa-solid fa-paper-plane"></i> <span data-i18n="creator.exportTopBtn">导出</span>
-                    </button>
-                </div>
-            </div>
-
             <div class="header-right" style="display: flex; gap: 8px;">
-                <button class="btn-glass btn-sm" id="btn-toggle-creator-mode">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <span data-i18n="creator.mode.pro">进入精修模式</span>
-                </button>
-                <div class="vertical-divider"></div>
                 <button class="btn-primary btn-sm btn-glow" id="creator-btn-toggle-inspector">
                     <i class="fa-solid fa-sliders"></i>
                     <span data-i18n="creator.showInspector">显示检查器</span>
@@ -159,19 +146,6 @@
                     <div class="tab-content active" id="tab-project">
                         <div class="v-stack-pro">
                             <!-- 精修模式下的项目工具箱 -->
-                            <div class="settings-section" id="section-inspector-toolbox">
-                                <div id="inspector-guide-edit" class="empty-guide-content">
-                                    <h3 class="ws-text-title" style="margin-bottom: 5px;"
-                                        data-i18n="creator.inspector.toolboxTitle">项目工具箱</h3>
-                                    <p class="ws-text-meta ws-text-muted" style="margin-bottom: 15px;"
-                                        data-i18n="creator.inspector.toolboxDesc">选择功能，开启 AI 智能处理流</p>
-
-                                    <div id="inspector-toolbox" class="inspector-toolbox">
-                                        <!-- 由 QuickToolsRenderer 渲染 -->
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- 0. 初始引导 -->
                             <div class="settings-section" id="section-empty-guide">
                                 <!-- 快捷模式下的引导文案 (通常在属性页显示) -->
@@ -436,22 +410,6 @@
                             </div>
 
                             <!-- 混合导出专区 (仅在 Edit 模式下更常用) -->
-                            <div class="settings-section" id="section-export-merged">
-                                <label class="section-label"><i class="fa-solid fa-file-export"></i>
-                                    <span data-i18n="creator.dialogs.exportCenter">导出与合并</span></label>
-                                <div class="btn-group-pro"
-                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                    <button class="btn btn-secondary btn-full" id="btn-export-separate-pro">
-                                        <i class="fa-solid fa-list-check"></i> <span
-                                            data-i18n="creator.dialogs.btnSeparate">单独导出</span>
-                                    </button>
-                                    <button class="btn btn-secondary btn-full" id="btn-export-merged-pro">
-                                        <i class="fa-solid fa-layer-group"></i> <span
-                                            data-i18n="creator.dialogs.btnMerge">合并导出</span>
-                                    </button>
-                                </div>
-                            </div>
-
                             <!-- 高级参数 (公用，在所有导出类卡片中显示) -->
                             <div class="settings-section" id="section-advanced-codec">
                                 <details class="advanced-settings-pro"
@@ -567,28 +525,12 @@
                                     <div class="guide-icon-pulse">
                                         <i class="fa-solid fa-i-cursor"></i>
                                     </div>
-                                    <h3 data-i18n="creator.properties.tabTitle">轨道属性面板</h3>
-                                    <p data-i18n="creator.properties.tabDesc">在下方时间轴选中一个片段，即可在此调节倍速、旋转、裁剪或音频增强参数
+                                    <h3 data-i18n="creator.title">快捷视频工具</h3>
+                                    <p data-i18n="creator.dragDropHint">选择快捷工具后，可在这里调整处理参数。
                                     </p>
                                 </div>
                             </div>
                             <!-- 2.1 播放播放速度 -->
-                            <div id="prop-section-speed" class="settings-section">
-                                <label class="section-label"><i class="fa-solid fa-gauge-high"></i>
-                                    <span data-i18n="creator.speed.title">播放速度</span></label>
-                                <div class="ctrl-row-pro">
-                                    <span class="ctrl-label" data-i18n="creator.speed.label">速度调节</span>
-                                    <input type="range" id="prop-speed-slider" min="0.25" max="4" value="1" step="0.25"
-                                        class="pro-slider">
-                                    <div class="value-badge" id="prop-speed-value">1.0x</div>
-                                </div>
-                                <button class="btn btn-primary btn-full" id="btn-prop-apply-speed"
-                                    style="margin-top: 10px; display: none;">
-                                    <i class="fa-solid fa-bolt"></i> <span
-                                        data-i18n="creator.speed.applyBtn">应用变速</span>
-                                </button>
-                            </div>
-
                             <!-- 2.1.2 画面详细处理 (已移除简单的旋转/镜像区块，由播放器下方工具栏承载) -->
 
                             <!-- 2.1.4 智能裁剪 -->
@@ -825,158 +767,11 @@
                             </div>
 
                             <!-- 2.3 转场设置 (选中连接点时) -->
-                            <div id="prop-section-transition" class="settings-section hidden">
-                                <label class="section-label"><i class="fa-solid fa-film"></i> <span
-                                        data-i18n="creator.transition.title">转场效果</span></label>
-                                <div class="ctrl-row-pro">
-                                    <span class="ctrl-label" data-i18n="creator.transition.type">类型</span>
-                                    <select id="prop-transition-type" class="setting-select"></select>
-                                </div>
-                                <div class="ctrl-row-pro">
-                                    <span class="ctrl-label" data-i18n="creator.transition.duration">时长</span>
-                                    <input type="number" id="prop-transition-duration" class="setting-input-pro"
-                                        value="1.0" step="0.1" style="width: 60px;">
-                                </div>
-                                <button class="btn btn-primary btn-full" id="btn-prop-apply-transition"
-                                    data-i18n="creator.transition.saveBtn">保存转场</button>
-                            </div>
                         </div>
                     </div>
                 </div>
             </aside>
 
-            <!-- 2.3 底部：播放轨道 (Timeline Workspace) -->
-            <div id="creator-timeline-workspace" class="creator-timeline-workspace">
-                <!-- [NEW] 布局调节手柄 (位于时间轴顶部，用于调节 Splitter) -->
-                <div id="video-resize-handle" class="resize-handle-h">
-                    <div class="handle-line"></div>
-                </div>
-                <div class="timeline-section-pro glass-panel hidden" id="creator-timeline-container">
-                    <div class="timeline-header">
-                        <div class="time-display" id="creator-timeline-current-time">00:00.000</div>
-                        <div class="timeline-controls">
-                            <!-- 1. 核心高频动作 (左手区锚点) -->
-                            <div class="timeline-quick-actions">
-                                <button class="btn-icon" id="btn-timeline-zoom-fit"
-                                    data-i18n="[title]creator.timeline.zoomFit">
-                                    <i class="fa-solid fa-expand"></i>
-                                </button>
-                                <button class="btn-icon btn-action-main" id="btn-timeline-split"
-                                    data-i18n="[title]creator.timeline.split">
-                                    <i class="fa-solid fa-scissors"></i>
-                                    <span class="btn-shortcut-hint">S</span>
-                                </button>
-                                <button class="btn-icon hidden" id="btn-timeline-subtitle-cuts"
-                                    title="Cut Timeline By Subtitles">
-                                    <i class="fa-solid fa-closed-captioning"></i>
-                                    <span class="subtitle-cut-count"></span>
-                                </button>
-                                <button class="btn-icon text-danger" id="btn-timeline-delete"
-                                    data-i18n="[title]creator.timeline.delete">
-                                    <i class="fa-solid fa-trash"></i>
-                                    <span class="btn-shortcut-hint">Del</span>
-                                </button>
-                                <div class="vertical-divider"></div>
-
-                                <!-- 2. 补全功能：音量快捷调节 -->
-                                <div class="quick-slider-wrapper" id="wrapper-timeline-volume">
-                                    <button class="btn-icon" id="btn-timeline-volume"
-                                        data-i18n="[title]creator.timeline.volume">
-                                        <i class="fa-solid fa-volume-high"></i>
-                                    </button>
-                                    <div class="quick-slider-popup">
-                                        <input type="range" id="input-timeline-volume" min="0" max="200" value="100"
-                                            class="mini-slider">
-                                        <span class="slider-val">100%</span>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <div class="vertical-divider"></div>
-
-                            <!-- 4. 视图辅助动作 -->
-                            <div class="timeline-view-actions">
-                                <button class="btn-icon" id="btn-timeline-snap"
-                                    data-i18n="[title]creator.timeline.snap">
-                                    <i class="fa-solid fa-magnet"></i>
-                                </button>
-                            </div>
-
-                            <div class="vertical-divider"></div>
-
-                            <!-- 5. 缩放控制 -->
-                            <div class="zoom-controls">
-                                <i class="fa-solid fa-magnifying-glass-minus text-muted" style="font-size: 11px;"></i>
-                                <input type="range" id="creator-timeline-zoom" min="0" max="100" step="0.1" value="50"
-                                    class="pro-slider" style="width: 80px;">
-                                <i class="fa-solid fa-magnifying-glass-plus text-muted" style="font-size: 11px;"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="timeline-body">
-                        <div class="timeline-playhead" id="creator-timeline-playhead"></div>
-
-                        <!-- Ruler Track -->
-                        <div class="timeline-track ruler-track">
-                            <div class="timeline-sidebar-label ruler-label">
-                                <i class="fa-solid fa-clock"></i> <span data-i18n="creator.timeline.title">时间轴</span>
-                            </div>
-                            <div class="ruler-area" id="timeline-ruler">
-                                <canvas id="creator-timeline-ruler-canvas"></canvas>
-                            </div>
-                        </div>
-
-                        <!-- Video Track (V1) -->
-                        <div class="timeline-track video-track" id="track-v1">
-                            <div class="timeline-sidebar-label">
-                                <i class="fa-solid fa-video"></i> <span data-i18n="creator.timeline.trackV1">V1
-                                    主视频</span>
-                            </div>
-                            <div class="track-content-area" id="track-content-v1">
-                            </div>
-                        </div>
-
-                        <!-- Audio Track (A1 - Primary) -->
-                        <div class="timeline-track audio-track" id="track-a1">
-                            <div class="timeline-sidebar-label" style="position: relative;">
-                                <i class="fa-solid fa-volume-high"></i> <span data-i18n="creator.timeline.trackA1">A1
-                                    视频原声</span>
-                                <div id="waveform-status-a1" class="waveform-status-overlay hidden">
-                                    <i class="fa-solid fa-circle-notch fa-spin"></i>
-                                </div>
-                            </div>
-                            <div class="waveform-area" id="timeline-waveform-a1">
-                                <canvas id="timeline-waveform-canvas-a1"></canvas>
-                            </div>
-                        </div>
-
-                        <!-- Audio Track (A2) -->
-                        <div class="timeline-track audio-track" id="track-a2">
-                            <div class="timeline-sidebar-label">
-                                <i class="fa-solid fa-music"></i> <span data-i18n="creator.timeline.trackA2">A2
-                                    背景音乐</span>
-                            </div>
-                            <div class="waveform-area" id="timeline-waveform-a2">
-                                <canvas id="timeline-waveform-canvas-a2"></canvas>
-                                <div class="track-empty-hint" id="track-a2-hint" data-i18n="creator.timeline.dropHint">
-                                    拖拽背景音乐到此处</div>
-                            </div>
-                        </div>
-
-                        <!-- Audio Track (A3) -->
-                        <div class="timeline-track audio-track" id="track-a3">
-                            <div class="timeline-sidebar-label">
-                                <i class="fa-solid fa-microphone-lines"></i> <span
-                                    data-i18n="creator.timeline.trackA3">A3 环境音效</span>
-                            </div>
-                            <div class="waveform-area" id="timeline-waveform-a3">
-                                <canvas id="timeline-waveform-canvas-a3"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </main>
     </div>
 
@@ -1268,68 +1063,6 @@
         </div>
     </div>
     <!-- Creator Export Modal -->
-    <div id="creator-export-modal" class="modal-overlay hidden">
-        <div class="modal-content-premium creator-export-modal">
-            <div class="modal-header-pro">
-                <div class="modal-title-pro">
-                    <i class="fas fa-file-export"></i>
-                    <span data-i18n="creator.export.title">导出选项</span>
-                </div>
-                <button class="btn-close-pro" id="btn-close-creator-export">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <div class="modal-body-pro">
-                <!-- Export Format -->
-                <div class="export-option-item">
-                    <label class="export-label" data-i18n="creator.export.format">导出格式</label>
-                    <div class="custom-select-wrapper">
-                        <select id="modal-export-format" class="premium-select">
-                            <option value="mp4">MP4 (H.264 / HEVC)</option>
-                            <option value="mkv">MKV (Matroska)</option>
-                            <option value="mov">MOV (QuickTime)</option>
-                        </select>
-                        <i class="fas fa-chevron-down select-arrow"></i>
-                    </div>
-                </div>
-
-                <!-- Export Type -->
-                <div class="export-option-item">
-                    <label class="export-label" data-i18n="creator.export.type">导出内容</label>
-                    <div class="custom-select-wrapper">
-                        <select id="modal-export-type" class="premium-select">
-                            <option value="video+audio" data-i18n="creator.export.typeVideoAudio">视频 + 音频</option>
-                            <option value="video" data-i18n="creator.export.typeVideoOnly">仅视频 (无声)</option>
-                            <option value="audio" data-i18n="creator.export.typeAudioOnly">仅音频 (MP3提取)</option>
-                        </select>
-                        <i class="fas fa-chevron-down select-arrow"></i>
-                    </div>
-                </div>
-
-                <!-- Save Path -->
-                <div class="export-option-item">
-                    <label class="export-label" data-i18n="creator.export.path">保存路径</label>
-                    <div class="path-input-group-premium">
-                        <input type="text" id="modal-creator-output-path" class="premium-input" readonly
-                            placeholder="...">
-                        <button class="btn-path-change" id="btn-modal-select-output">
-                            <i class="fas fa-folder-open"></i>
-                            <span data-i18n="common.change">更改</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-footer-pro">
-                <button class="btn-ghost-pro" id="btn-cancel-creator-export" data-i18n="common.cancel">取消</button>
-                <button class="btn-primary-premium" id="btn-submit-creator-export">
-                    <i class="fas fa-rocket"></i>
-                    <span data-i18n="creator.export.startBtn">开始导出</span>
-                </button>
-            </div>
-        </div>
-    </div>
 </section>
 </body>
 

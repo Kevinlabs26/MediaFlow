@@ -9,7 +9,6 @@ describe('user controlled labels render as text', () => {
         require('../../../src/features/download/PlaylistUIManager');
         require('../../../src/features/scribe/ScribeQueueManager');
         require('../../../src/features/enhance/EnhanceStateManager');
-        require('../../../src/features/editor/ui/EditorUIManager');
     });
 
     beforeEach(() => {
@@ -177,38 +176,4 @@ describe('user controlled labels render as text', () => {
         expect(manager.removeFile).toHaveBeenCalledWith(0);
     });
 
-    test('editor asset cards escape asset names and media attributes', () => {
-        document.body.innerHTML = `
-            <div id="editor-asset-list"></div>
-            <div id="editor-assets-count"></div>
-        `;
-
-        const manager = new window.EditorUIManager({
-            store: {
-                selectAsset: jest.fn(),
-                getState: jest.fn(() => ({ playheadTime: 0 })),
-                insertAssetAtTime: jest.fn()
-            }
-        });
-        manager.elements = {
-            assetList: document.getElementById('editor-asset-list'),
-            assetsCount: document.getElementById('editor-assets-count')
-        };
-
-        manager.renderAssets({
-            assets: [{
-                id: 'asset-1',
-                name: `${unsafeText}.png`,
-                kind: 'image',
-                src: 'blob:image" onerror="alert(4)',
-                duration: 1
-            }],
-            selectedAssetId: null
-        });
-
-        expect(document.querySelector('.editor-asset-name').getAttribute('title')).toBe(unsafeText);
-        expect(document.querySelector('.editor-asset-name').textContent).toContain('bad">');
-        expect(document.querySelectorAll('img')).toHaveLength(1);
-        expect(document.querySelector('.editor-asset-visual-image img').getAttribute('onerror')).toBeNull();
-    });
 });

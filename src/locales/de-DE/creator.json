@@ -572,41 +572,6 @@
       "menuVideo": "Video-Toolbox",
       "menuAudio": "Audio / KI"
     },
-    "timeline": {
-      "title": "Zeitlinie",
-      "trackV1": "V1 Hauptvideo",
-      "trackA1": "A1 Originalton",
-      "trackA2": "A2 Hintergrundmusik",
-      "trackA3": "A3 Effekte",
-      "trackVideo": "Videospur {num}",
-      "trackAudio": "Audiospur {num}",
-      "dropHint": "Musik hierher ziehen",
-      "split": "Trennen (S)",
-      "delete": "Löschen (Entf)",
-      "volume": "Lautstärke anpassen",
-      "addText": "Text hinzufügen (T)",
-      "snap": "Magnet-Snapping (N)",
-      "menuSplit": "Hier trennen",
-      "menuDelete": "Segment löschen",
-      "menuUnlink": "Audio/Video trennen",
-      "menuRelink": "Neu verknüpfen",
-      "menuSeparateAudio": "Audio trennen",
-      "menuAddTrackV": "Videospur hinzufügen",
-      "menuAddTrackA": "Audiospur hinzufügen",
-      "menuRemoveTrack": "Spur entfernen",
-      "mainTrackLocked": "Hauptspur kann nicht gelöscht werden",
-      "selectionActive": "Auswahlwerkzeug aktiv",
-      "unlinkDone": "Verknüpfung aufgehoben",
-      "linkSuccess": "Links für {count} Clips erstellt",
-      "linkNoTarget": "Keine passenden Clips zum Linken",
-      "snapOn": "Snapping AN",
-      "snapOff": "Snapping AUS",
-      "waveformFail": "Wellenform konnte nicht erstellt werden",
-      "menuToStart": "An den Anfang verschieben (an 00:00 ausrichten)",
-      "moveStartToast": "An den Anfang der Spur verschoben",
-      "zoomToFitDone": "Timeline-Zoom an die Projektübersicht angepasst",
-      "zoomFit": "Zoom an Bildschirm anpassen"
-    },
     "menu": {
       "speed05": "0.5x (Langsam)",
       "speed15": "1.5x (Schnell)",
@@ -765,17 +730,6 @@
       "statusCalculatingMetadata": "Metadaten laden...",
       "audioOnlyMode": "Audio-Bearbeitungsmodus",
       "mergeFail": "Zusammenführen fehlgeschlagen"
-    },
-    "exportTopBtn": "Exportieren",
-    "export": {
-      "title": "Exporteinstellungen",
-      "format": "Exportformat",
-      "type": "Inhaltstyp",
-      "typeVideoAudio": "Video + Audio",
-      "typeVideoOnly": "Nur Video (Stumm)",
-      "typeAudioOnly": "Nur Audio (MP3)",
-      "path": "Speicherpfad",
-      "startBtn": "Export starten"
     }
   }
 }

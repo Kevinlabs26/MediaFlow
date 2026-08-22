@@ -330,9 +330,6 @@ contextBridge.exposeInMainWorld('mediaflow', {
         detectSilence: (filePath, options) => ipcRenderer.invoke('creator:detectSilence', filePath, options),
         removeSilence: (filePath, segments, options) => ipcRenderer.invoke('creator:removeSilence', filePath, segments, options),
         cancel: (taskId) => ipcRenderer.invoke('creator:cancelTask', taskId),
-        mix: (options) => ipcRenderer.invoke('creator:mix', options),
-        mixMultiple: (options) => ipcRenderer.invoke('creator:mixMultiple', options),
-        export: (job) => ipcRenderer.invoke('creator:export', job),
         onProgress: (callback) => {
             const listener = (event, data) => callback(data);
             ipcRenderer.on('creator:progress', listener);

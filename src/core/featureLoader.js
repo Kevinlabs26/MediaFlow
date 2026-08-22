@@ -1,10 +1,9 @@
 /**
  * featureLoader.js — on-demand feature bundles (classic scripts).
- * Phase D: Enhance + Editor + Subtitle + Creator lazy load.
+ * Phase D: Enhance + Subtitle + Creator lazy load.
  *
  * Cold-start keeps shared pieces:
  * - TranslationService, SubtitleDisplayMode
- * - CreatorExportCapabilityMatrix / TimelineProjectSnapshot / CreatorExportPlanner (Editor export)
  */
 (function (root) {
     const ENHANCE_SCRIPTS = Object.freeze([
@@ -17,28 +16,6 @@
         'features/enhance/EnhanceSettingsManager.js',
         'features/enhance/EnhanceStateManager.js',
         'features/enhance/EnhanceFlow.js'
-    ]);
-
-    const EDITOR_SCRIPTS = Object.freeze([
-        'features/editor/EditorProjectStore.js',
-        'features/editor/import/EditorMediaImporter.js',
-        'features/editor/export/EditorTimelineProjectSnapshot.js',
-        'features/editor/export/EditorExportManager.js',
-        'features/editor/preview/EditorPreviewManager.js',
-        'features/editor/playback/EditorPlaybackManager.js',
-        'features/editor/timeline/EditorTimelineSnapUtils.js',
-        'features/editor/timeline/EditorTimelineDragManager.js',
-        'features/editor/timeline/EditorTimelineDropManager.js',
-        'features/editor/timeline/EditorTimelineSelectionManager.js',
-        'features/editor/timeline/EditorTimelinePlayheadManager.js',
-        'features/editor/timeline/EditorTimelineZoomOptimizer.js',
-        'features/editor/timeline/EditorTimelineViewportManager.js',
-        'features/editor/timeline/EditorTimelineTrimManager.js',
-        'features/editor/timeline/EditorTimelineManager.js',
-        'features/editor/timeline/EditorTimelineActions.js',
-        'features/editor/properties/EditorInspectorManager.js',
-        'features/editor/ui/EditorUIManager.js',
-        'features/editor/EditorFlow.js'
     ]);
 
     // TranslationService + SubtitleDisplayMode stay on cold-start (shared).
@@ -85,14 +62,7 @@
         'features/subtitle/SubtitleFlow.js'
     ]);
 
-    // Export planner trio may already be on cold-start; ScriptLoader de-dupes.
     const CREATOR_SCRIPTS = Object.freeze([
-        'features/video/integration/CreatorSubtitleProject.js',
-        'features/video/integration/CreatorWorkflowImporter.js',
-        'features/video/integration/CreatorSubtitleLaneManager.js',
-        'features/video/integration/CreatorSubtitleCutActions.js',
-        'features/video/integration/CreatorSubtitlePreviewOverlay.js',
-        'features/video/integration/CreatorSubtitleAudioTrackImporter.js',
         'features/video/BatchListRenderer.js',
         'features/video/BatchFileManager.js',
         'features/video/BatchUIManager.js',
@@ -106,68 +76,26 @@
         'features/video/ui/InspectorManager.js',
         'features/video/ui/QuickToolsRenderer.js',
         'features/video/ui/ToolSettingsManager.js',
-        'features/video/ui/CreatorExportManager.js',
         'features/video/CreatorUIManager.js',
-        'features/video/export/CreatorSubtitleExportAdapter.js',
-        'features/video/timeline/core/TimelineSelectionResolver.js',
-        'features/video/timeline/core/TimelinePlaybackState.js',
-        'features/video/timeline/core/TimelineTrackAudioControls.js',
-        'features/video/timeline/core/TimelineTrackLayout.js',
-        'features/video/timeline/core/TimelineTrackReorder.js',
-        'features/video/timeline/core/TimelineTrackRegistry.js',
-        'features/video/timeline/core/TimelineTrackSync.js',
-        'features/video/timeline/core/TimelinePlaybackMapping.js',
-        'features/video/timeline/render/TimelineRenderContext.js',
-        'features/video/timeline/render/TimelineWaveformMipmaps.js',
-        'features/video/timeline/render/TimelineWaveformRenderer.js',
-        'features/video/timeline/render/TimelineViewportRenderer.js',
-        'features/video/timeline/render/TimelineVideoTrackRenderer.js',
-        'features/video/timeline/render/TimelineAudioTrackRenderer.js',
-        'features/video/timeline/core/TimelineContextMenu.js',
-        'features/video/timeline/core/TimelineDragResolver.js',
-        'features/video/timeline/core/TimelineTrackMutation.js',
-        'features/video/timeline/core/TimelineDragLifecycle.js',
-        'features/video/timeline/core/TimelineDragSession.js',
-        'features/video/timeline/core/TimelineDragPreview.js',
-        'features/video/timeline/core/TimelineEditOperations.js',
-        'features/video/timeline/core/TimelineActions.js',
-        'features/video/timeline/core/TimelineClipControls.js',
-        'features/video/timeline/core/TimelineStateSnapshot.js',
-        'features/video/timeline/core/TimelineNavigation.js',
-        'features/video/timeline/core/TimelineMediaSupport.js',
-        'features/video/timeline/core/TimelineInteractionUtils.js',
-        'features/video/timeline/core/TimelineBootstrap.js',
         'features/video/preview/core/CreatorPreviewBootstrap.js',
         'features/video/preview/core/CreatorPreviewPresentation.js',
         'features/video/CreatorPreview.js',
-        'features/video/CreatorTimelineManager.js',
         'features/video/BatchCreatorFlow.js',
         'features/video/SilenceProcessor.js',
-        'features/video/AudioTrackPlayer.js',
-        'features/video/TimelineAudioMixer.js',
         'features/video/audio/core/CreatorAudioMixerTools.js',
         'features/video/audio/core/CreatorAudioDemucsResults.js',
         'features/video/audio/core/CreatorAudioDemucsTools.js',
         'features/video/CreatorAudioHandler.js',
         'features/video/VideoService.js',
         'features/video/VideoUIManager.js',
-        'features/video/export/CreatorExportCapabilityMatrix.js',
-        'features/video/export/TimelineProjectSnapshot.js',
-        'features/video/export/CreatorExportPlanner.js',
         'features/video/VideoProcessor.js',
-        'features/video/ContextMenu.js',
-        'features/video/RangeSelector.js',
         'features/video/flow/core/CreatorFlowBootstrap.js',
-        'features/video/flow/core/CreatorFlowProjectStore.js',
         'features/video/flow/core/CreatorFlowToolDispatcher.js',
         'features/video/CreatorFlow.js'
     ]);
 
     /** @type {Promise<*>|null} */
     let enhancePromise = null;
-    /** @type {Promise<*>|null} */
-    let editorPromise = null;
-    /** @type {Promise<*>|null} */
     let subtitlePromise = null;
     /** @type {Promise<*>|null} */
     let creatorPromise = null;
@@ -203,7 +131,6 @@
         }
         const labels = {
             enhance: t('common.loadingFeature.enhance', 'Loading AI Enhance…'),
-            editor: t('common.loadingFeature.editor', 'Loading Editor…'),
             subtitle: t('common.loadingFeature.subtitle', 'Loading Subtitle studio…'),
             creator: t('common.loadingFeature.creator', 'Loading Creator tools…')
         };
@@ -260,48 +187,6 @@
         });
 
         return enhancePromise;
-    }
-
-    async function ensureEditor(app) {
-        if (root.editorFlow && typeof root.editorFlow.init === 'function') {
-            return root.editorFlow;
-        }
-
-        if (editorPromise) return editorPromise;
-
-        editorPromise = withFeatureLoading('editor', async () => {
-            const loader = root.ScriptLoader;
-            if (!loader?.loadScripts) {
-                throw new Error('[FeatureLoader] ScriptLoader missing');
-            }
-
-            await loader.loadScripts(EDITOR_SCRIPTS);
-
-            const EditorCls = root.EditorFlow;
-            if (typeof EditorCls !== 'function') {
-                throw new Error('[FeatureLoader] EditorFlow not found after script load');
-            }
-
-            const appRef = app || root.app || null;
-            const flow = new EditorCls(appRef);
-            root.editorFlow = flow;
-            if (appRef) {
-                appRef.editorFlow = flow;
-            }
-
-            if (typeof flow.init === 'function' && !flow._featureLoaderInited) {
-                await flow.init();
-                flow._featureLoaderInited = true;
-            }
-
-            return flow;
-        }).catch((err) => {
-            editorPromise = null;
-            console.error('[FeatureLoader] ensureEditor failed:', err);
-            throw err;
-        });
-
-        return editorPromise;
     }
 
     async function ensureSubtitle(app) {
@@ -401,11 +286,9 @@
 
     root.FeatureLoader = {
         ENHANCE_SCRIPTS,
-        EDITOR_SCRIPTS,
         SUBTITLE_SCRIPTS,
         CREATOR_SCRIPTS,
         ensureEnhance,
-        ensureEditor,
         ensureSubtitle,
         ensureCreator
     };

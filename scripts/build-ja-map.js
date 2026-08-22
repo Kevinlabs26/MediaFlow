@@ -41,7 +41,6 @@ t('creator.denoise.engineDeepfilter', 'DeepFilterNet AI');
 t('creator.watermark.typeText', 'テキスト');
 t('creator.segment.defaultName', 'セグメント {index}');
 t('creator.transform.cropDesktop', '16:9（デスクトップ）');
-t('creator.export.typeVideoAudio', '動画 + 音声');
 
 // ---- download ----
 t('download.pause', '一時停止');

@@ -10,15 +10,25 @@ class DownloadActionHandler {
         this.service = manager.service;
     }
 
-    sendToCreator() {
-        if (this.manager.lastDownloadedFilePath && window.creatorFlow) {
-            this.app.switchPage('creator');
-            // 延遲確保頁面資源加載及初始化完成
-            setTimeout(() => {
-                window.creatorFlow.addLocalFile(this.manager.lastDownloadedFilePath);
-            }, 100);
-        } else {
+    async sendToCreator() {
+        const filePath = this.manager.lastDownloadedFilePath;
+        if (!filePath) {
             this.app.showToast(window.i18n?.t('download.fileNavNotFound') || 'Cannot find file navigation', 'warning');
+            return;
+        }
+
+        try {
+            await this.app.switchPage('creator');
+            const flow = window.FeatureLoader?.ensureCreator
+                ? await window.FeatureLoader.ensureCreator(this.app)
+                : window.creatorFlow;
+            if (!flow?.addLocalFile) {
+                throw new Error('Creator tools are not available');
+            }
+            await flow.addLocalFile(filePath);
+        } catch (error) {
+            console.error('[DownloadActionHandler] sendToCreator failed:', error);
+            this.app.showToast(window.i18n?.t?.('common.loadFailed') || 'Failed to open Creator tools', 'error');
         }
     }
 

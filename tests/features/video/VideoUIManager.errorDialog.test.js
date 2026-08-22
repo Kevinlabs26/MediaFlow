@@ -31,22 +31,6 @@ describe('VideoUIManager error dialog', () => {
         expect(controller.addWatermark).toHaveBeenCalledTimes(1);
     });
 
-    it('routes legacy separate and merged export buttons to smart clip modes', () => {
-        document.body.innerHTML = `
-            <button id="btn-export-separate-pro" type="button"></button>
-            <button id="btn-export-merged-pro" type="button"></button>
-        `;
-        const controller = { core: {}, smartClip: jest.fn() };
-        const ui = new window.VideoUIManager(controller);
-
-        ui.init();
-        document.getElementById('btn-export-separate-pro').click();
-        document.getElementById('btn-export-merged-pro').click();
-
-        expect(controller.smartClip).toHaveBeenNthCalledWith(1, { merge: false });
-        expect(controller.smartClip).toHaveBeenNthCalledWith(2, { merge: true });
-    });
-
     it('toggles image watermark controls and stores the selected image path', async () => {
         document.body.innerHTML = `
             <label><input type="radio" name="watermark-type" value="text" checked></label>

@@ -22,7 +22,6 @@
         'settings',
         'extension',
         'creator',
-        'editor',
         'subtitle',
         'mobile',
         'donation'

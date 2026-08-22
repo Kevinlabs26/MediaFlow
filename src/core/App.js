@@ -23,8 +23,6 @@ class MediaFlowApp {
         // Feature Flows — heavy toolboxes lazy-loaded via FeatureLoader
         this.creatorFlow = null;
         window.creatorFlow = null;
-        this.editorFlow = null;
-        window.editorFlow = null;
         this.subtitleFlow = null;
         window.subtitleFlow = null;
         if (window.PixelFlow) {
@@ -159,7 +157,7 @@ class MediaFlowApp {
             this.historyManager.init();
 
             // 5. 初始化 Feature Flows 
-            // creator / editor / subtitle init deferred to FeatureLoader on first open
+            // creator / subtitle init deferred to FeatureLoader on first open
             if (this.pixelFlow) await this.pixelFlow.init?.();
             // scribeFlow often auto-inits or has complex flow, check scribeFlow.js if needed
             if (this.scribeFlow) await this.scribeFlow.init?.();

@@ -14,13 +14,10 @@ describe('DragDropManager', () => {
             <button id="btn-check" type="button"></button>
         `;
         this.app = {
-            router: { currentPage: 'editor' },
+            router: { currentPage: 'download' },
             switchPage: jest.fn(),
             switchMode: jest.fn(),
             showToast: jest.fn()
-        };
-        window.editorFlow = {
-            handleFileSelect: jest.fn()
         };
         this.manager = new window.DragDropManager(this.app);
     });
@@ -52,26 +49,6 @@ describe('DragDropManager', () => {
         await this.manager._handleGlobalDrop(event);
 
         expect(event.preventDefault).not.toHaveBeenCalled();
-        expect(window.editorFlow.handleFileSelect).not.toHaveBeenCalled();
-    });
-
-    it('delegates editor media file drops to the editor flow', async () => {
-        const file = { name: 'clip.mp4', type: 'video/mp4' };
-        const event = {
-            target: document.body,
-            preventDefault: jest.fn(),
-            stopPropagation: jest.fn(),
-            dataTransfer: {
-                files: [file],
-                getData: jest.fn(() => '')
-            }
-        };
-
-        await this.manager._handleGlobalDrop(event);
-
-        expect(event.preventDefault).toHaveBeenCalled();
-        expect(event.stopPropagation).toHaveBeenCalled();
-        expect(window.editorFlow.handleFileSelect).toHaveBeenCalledWith([file]);
     });
 
     it('recognizes dropped urls with surrounding whitespace', async () => {

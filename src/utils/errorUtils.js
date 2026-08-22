@@ -14,7 +14,9 @@ const ERROR_PATTERNS = [
     { pattern: /Private video/i, message: '这是私密视频，无法下载' },
     { pattern: /Sign in to confirm your age/i, message: '此视频有年龄限制，需要登录才能观看' },
     { pattern: /This video is available to this channel's members/i, message: '这是会员专属视频，需要订阅才能观看' },
-    { pattern: /copyright/i, message: '视频因版权问题无法下载' },
+    // FFmpeg prints a generic "Copyright" banner on stderr; only match actual
+    // downloader copyright restrictions, not every media-processing error.
+    { pattern: /copyright.{0,80}(?:claim|block|restrict|unavailable|takedown)|(?:claim|block|restrict|unavailable).{0,80}copyright/i, message: '视频因版权问题无法下载' },
     { pattern: /blocked.*country/i, message: '此视频在您所在地区不可用' },
     { pattern: /geo.?restricted/i, message: '此视频有地区限制，无法在当前地区观看' },
 

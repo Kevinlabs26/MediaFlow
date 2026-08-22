@@ -35,8 +35,6 @@
 #page-creator .page-header .btn-primary,
 #page-creator .page-header .btn-primary-pro,
 #page-creator .page-header .btn-glass,
-#page-creator #btn-creator-export-dialog,
-#page-creator #btn-toggle-creator-mode,
 #page-creator #creator-btn-toggle-inspector,
 #page-enhance .preview-header .btn,
 #page-enhance .preview-controls .btn,
@@ -159,7 +157,6 @@
 
 /* Secondary header actions (outline) */
 #page-subtitle #subtitle-btn-toggle-inspector,
-#page-creator #btn-toggle-creator-mode,
 #page-creator #creator-btn-toggle-inspector {
     background: transparent !important;
     color: var(--text-secondary) !important;
@@ -168,7 +165,6 @@
 }
 
 #page-subtitle #subtitle-btn-toggle-inspector:hover,
-#page-creator #btn-toggle-creator-mode:hover,
 #page-creator #creator-btn-toggle-inspector:hover {
     background: var(--fill-muted) !important;
     color: var(--text-primary) !important;

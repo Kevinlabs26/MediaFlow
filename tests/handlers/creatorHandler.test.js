@@ -1,16 +1,8 @@
 const { EventEmitter } = require('events');
 
-const mockCancelTask = jest.fn();
-const mockRun = jest.fn();
-
 jest.mock('electron-store', () =>
     jest.fn().mockImplementation(() => ({ get: jest.fn(), set: jest.fn(), delete: jest.fn() }))
 );
-
-jest.mock('../../src/services/export/CreatorExportRunner', () => ({
-    cancelTask: (...args) => mockCancelTask(...args),
-    run: (...args) => mockRun(...args)
-}));
 
 jest.mock('electron', () => ({
     app: { getPath: jest.fn(() => '/tmp') },
@@ -75,7 +67,7 @@ describe('creatorHandler', () => {
         expect(result.segments).toEqual([{ start: 1, end: 2 }]);
     });
 
-    test('creator:cancelTask cancels export jobs before falling back to ffmpeg service tasks', async () => {
+    test('creator:cancelTask cancels the matching ffmpeg service task', async () => {
         const { spawn, exec } = require('child_process');
         const mockProc1 = new EventEmitter();
         mockProc1.pid = 101;
@@ -90,8 +82,6 @@ describe('creatorHandler', () => {
         mockProc2.kill = jest.fn();
 
         spawn.mockReturnValueOnce(mockProc1).mockReturnValueOnce(mockProc2);
-        mockCancelTask.mockReturnValue(true);
-
         handlers['creator:removeSilence']({ sender: { send: jest.fn() } }, 'v1.mp4', [], { taskId: 'task1' });
         handlers['creator:removeSilence']({ sender: { send: jest.fn() } }, 'v2.mp4', [], { taskId: 'task2' });
 
@@ -104,30 +94,8 @@ describe('creatorHandler', () => {
 
         const result = await handlers['creator:cancelTask']({}, 'task1');
 
-        expect(result).toBe(true);
-        expect(mockCancelTask).toHaveBeenCalledWith('task1');
+        expect(result).toEqual({ success: true });
         expect(mockProc1.kill).toHaveBeenCalled();
         expect(mockProc2.kill).not.toHaveBeenCalled();
-    });
-
-    test('creator:export delegates to the export runner and forwards structured progress', async () => {
-        const sender = { send: jest.fn() };
-        const job = { jobId: 'job-1', output: { path: '/out.mp4' } };
-
-        mockRun.mockImplementation(async (receivedJob, options) => {
-            options.onProgress({ jobId: receivedJob.jobId, stage: 'prepare', progress: 10, message: 'Preparing export' });
-            return { success: true, jobId: receivedJob.jobId, outputPath: '/out.mp4' };
-        });
-
-        const result = await handlers['creator:export']({ sender }, job);
-
-        expect(mockRun).toHaveBeenCalled();
-        expect(sender.send).toHaveBeenCalledWith('creator:progress', {
-            jobId: 'job-1',
-            stage: 'prepare',
-            progress: 10,
-            message: 'Preparing export'
-        });
-        expect(result).toEqual({ success: true, jobId: 'job-1', outputPath: '/out.mp4' });
     });
 });

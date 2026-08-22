@@ -27,7 +27,7 @@ const CODEC_CONFIGS = {
         presetMap: { fast: 'veryfast', balanced: 'medium', extreme: 'slow' }
     },
     'av1': {
-        encoder: 'libsvtav1',
+        encoder: 'libaom-av1',
         crfMap: { high: '32', medium: '42', low: '52', extreme: '60' },
         presetMap: { fast: '8', balanced: '5', extreme: '4' }
     }
@@ -96,13 +96,13 @@ async function handleCompress(event, options) {
             attempts++;
             
             // 编码器探测模块
-            let currentEncoder = 'libx264';
+            const activeConfig = CODEC_CONFIGS[codec] || CODEC_CONFIGS['h264'];
+            let currentEncoder = activeConfig.encoder;
             if (hasVideo) {
-                currentEncoder = tryHardware ? (await FFmpegRunner.getBestEncoder(codec)) : (codec === 'hevc' ? 'libx265' : 'libx264');
+                currentEncoder = tryHardware ? (await FFmpegRunner.getBestEncoder(codec)) : activeConfig.encoder;
             }
             
             const isHW = hasVideo && (currentEncoder.includes('nvenc') || currentEncoder.includes('qsv') || currentEncoder.includes('amf'));
-            const activeConfig = CODEC_CONFIGS[codec] || CODEC_CONFIGS['h264'];
             const crf = activeConfig.crfMap[quality] || activeConfig.crfMap['medium'];
             let ffPreset = activeConfig.presetMap[preset] || activeConfig.presetMap['balanced'];
 
@@ -146,7 +146,7 @@ async function handleCompress(event, options) {
 
                 // 视频辅助参数
                 if (codec === 'av1' && !isHW) {
-                    args.push('-preset', ffPreset, '-svtav1-params', 'tune=0');
+                    args.push('-cpu-used', ffPreset, '-row-mt', '1');
                 } else if (codec === 'hevc' && !isHW) {
                     args.push('-preset', ffPreset, '-tag:v', 'hvc1', '-profile:v', 'main');
                 } else {
@@ -217,10 +217,7 @@ async function handleCompress(event, options) {
                 };
             } else {
                 lastError = runResult.error;
-                const isHWError = runResult.code === -22 || runResult.code === 4294967295 || runResult.code === 4294967274 ||
-                                 /invalid argument|device|hwaccel|encoder|failed to setup|init.*failed/i.test(lastError);
-                
-                if (tryHardware && isHWError && hasVideo) {
+                if (tryHardware && isHW && hasVideo) {
                     console.warn(`[video:compress] HW failed, retrying CPU: ${lastError}`);
                     tryHardware = false;
                     continue; 

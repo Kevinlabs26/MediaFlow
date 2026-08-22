@@ -114,9 +114,6 @@ class CreatorFlowToolDispatcher {
         console.log(`[CreatorFlow] Executing tool: ${action}`, params);
 
         switch (action) {
-        case 'render':
-            return await flow.videoProcessor?.renderProject();
-
         case 'vertical':
             return await flow.videoProcessor?.makeVertical();
 

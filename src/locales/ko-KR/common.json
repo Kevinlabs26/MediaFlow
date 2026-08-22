@@ -159,7 +159,6 @@
     "loadingFeature": {
       "generic": "로딩 중…",
       "enhance": "AI 향상 로딩 중…",
-      "editor": "편집기 로딩 중…",
       "subtitle": "자막 스튜디오 로딩 중…",
       "creator": "Creator 도구 로딩 중…"
     }

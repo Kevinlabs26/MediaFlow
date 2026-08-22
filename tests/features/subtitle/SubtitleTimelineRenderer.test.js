@@ -21,7 +21,8 @@ describe('SubtitleTimelineRenderer source media guides', () => {
             moveTo: jest.fn(),
             lineTo: jest.fn(),
             stroke: jest.fn(),
-            setLineDash: jest.fn()
+            setLineDash: jest.fn(),
+            fillText: jest.fn()
         };
     }
 
@@ -149,5 +150,32 @@ describe('SubtitleTimelineRenderer source media guides', () => {
         expect(overlay).not.toBeNull();
         expect(overlay.hidden).toBe(true);
         expect(parent.querySelectorAll('.source-waveform-segment')).toHaveLength(0);
+    });
+
+    test('drawRuler keeps time labels readable at low zoom', () => {
+        document.body.innerHTML = `
+            <div id="tracks-viewport"></div>
+            <div id="ruler-parent"><canvas id="ruler"></canvas></div>
+        `;
+
+        const canvas = document.getElementById('ruler');
+        const parent = document.getElementById('ruler-parent');
+        Object.defineProperty(parent, 'clientWidth', { configurable: true, value: 600 });
+        Object.defineProperty(parent, 'clientHeight', { configurable: true, value: 40 });
+
+        const ctx = createContext();
+        const renderer = new window.SubtitleTimelineRenderer({
+            ctx,
+            rulerCanvas: canvas,
+            pxPerSec: 3,
+            duration: 200,
+            formatTimeSimple: (seconds) => String(seconds)
+        });
+
+        renderer.drawRuler();
+
+        expect(ctx.fillText.mock.calls.map(([label]) => label)).toEqual([
+            '0', '30', '60', '90', '120', '150', '180'
+        ]);
     });
 });

@@ -11,9 +11,7 @@ class InspectorManager {
     }
 
     getDefaultSectionIds() {
-        return this.uiManager.mode === 'edit'
-            ? ['section-inspector-toolbox']
-            : ['section-empty-guide'];
+        return ['section-empty-guide'];
     }
 
     /**
@@ -55,14 +53,11 @@ class InspectorManager {
      */
     setupProHeader() {
         const {
-            btnSelectPath, btnToggleInspector, headerRenderBtn,
-            inspectorRenderBtn, btnQuickRotate, btnQuickMirror, btnQuickCrop
+            btnSelectPath, btnToggleInspector, btnQuickRotate, btnQuickMirror, btnQuickCrop
         } = this.uiManager.elements;
 
         btnSelectPath?.addEventListener('click', () => this.uiManager.app.executeTool('select-output-path'));
         btnToggleInspector?.addEventListener('click', () => this.toggleInspector());
-        headerRenderBtn?.addEventListener('click', () => this.uiManager.app.executeTool('render'));
-        inspectorRenderBtn?.addEventListener('click', () => this.uiManager.app.executeTool('render'));
 
         btnQuickRotate?.addEventListener('click', () => this.executeQuickRotate());
         btnQuickMirror?.addEventListener('click', () => this.executeQuickMirror());
@@ -145,9 +140,6 @@ class InspectorManager {
             this.showOnlySections(this.getDefaultSectionIds());
             this.syncButtonState();
 
-            // 🚀 确保精修模式侧边栏工具箱刷新（根据音视频状态动态禁用）
-            this.uiManager.quickTools?.renderInInspector?.();
-
             // 返回时 clearing 所有工具卡片的激活状态
             this.uiManager.quickTools?.clearActiveCard?.();
 
@@ -185,7 +177,6 @@ class InspectorManager {
         case 'watermark': sectionIds = ['section-watermark']; break;
         case 'audio-enhance': sectionIds = ['prop-section-audio']; break;
         case 'separation': sectionIds = ['prop-section-separation']; break;
-        case 'speed': sectionIds = ['prop-section-speed']; break;
         case 'crop':
             sectionIds = ['prop-section-crop'];
             setTimeout(() => this.uiManager.toolSettings?._triggerCropPreview(), 100);

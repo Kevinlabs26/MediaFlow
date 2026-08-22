@@ -19,8 +19,6 @@
     <link rel="stylesheet" href="styles/features.css">
 
     <link rel="stylesheet" href="styles/creator.css">
-    <link rel="stylesheet" href="styles/creator_timeline_layout.css">
-    <link rel="stylesheet" href="styles/editor.css">
     <link rel="stylesheet" href="styles/subtitle.css">
     <link rel="stylesheet" href="styles/settings.css">
     <link rel="stylesheet" href="styles/scribe-player.css">
@@ -33,7 +31,6 @@
     <link rel="stylesheet" href="styles/extension.css">
     <link rel="stylesheet" href="styles/donation.css">
     <link rel="stylesheet" href="styles/transitions.css">
-    <link rel="stylesheet" href="styles/video_transitions.css">
     <link rel="stylesheet" href="styles/light-theme-overrides.css">
     <!-- Last: flatten residual glass / glow chrome across all pages -->
     <link rel="stylesheet" href="styles/flat-chrome.css">
@@ -149,19 +146,6 @@
                         <small class="nav-item-hint" data-i18n="nav.creatorHint">一键处理</small>
                     </span>
                 </button>
-                <button class="nav-item" data-page="editor" title="Multi-track timeline editor">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="6" cy="6" r="3" />
-                        <circle cx="6" cy="18" r="3" />
-                        <path d="M8.12 8.12 12 12" />
-                        <path d="M20 4 8.12 15.88" />
-                        <path d="M14.8 14.8 20 20" />
-                    </svg>
-                    <span class="nav-item-label">
-                        <span data-i18n="nav.editor">多轨时间线</span>
-                        <small class="nav-item-hint" data-i18n="nav.editorHint">精修剪辑</small>
-                    </span>
-                </button>
                 <button class="nav-item" data-page="subtitle">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -221,7 +205,6 @@
 
             <!-- CreatorFlow - 视频工具页面 (Loaded dynamically) -->
             <section class="page" id="page-creator"></section>
-            <section class="page" id="page-editor"></section>
 
             <!-- SubtitleFlow - 字幕工具 (Loaded dynamically) -->
             <section class="page" id="page-subtitle"></section>
@@ -355,16 +338,8 @@
     <script src="features/image/PixelResizer.js"></script>
     <script src="features/image/PixelUIManager.js?v=1.3.17"></script>
     <script src="features/image/PixelFlow.js?v=1.3.17"></script>
-    <script src="features/shared/workflow/LocalizedEditProject.js"></script>
-    <script src="features/shared/workflow/LocalizedEditProjectStore.js"></script>
-    <script src="features/shared/workflow/SubtitleSegmentAdapter.js"></script>
     <script src="features/subtitle/shared/SubtitleDisplayMode.js"></script>
-    <!-- Shared export planner (Editor + Creator) — keep on cold start -->
-    <script src="features/video/export/CreatorExportCapabilityMatrix.js"></script>
-    <script src="features/video/export/TimelineProjectSnapshot.js"></script>
-    <script src="features/video/export/CreatorExportPlanner.js"></script>
     <!-- Creator toolbox scripts: lazy-loaded via FeatureLoader.ensureCreator() -->
-    <!-- Editor scripts: lazy-loaded via FeatureLoader.ensureEditor() -->
     <script src="features/mobile/MobileFlowService.js"></script>
     <script src="features/mobile/MobileFlowUIManager.js"></script>
     <script src="features/mobile/MobileFlow.js"></script>

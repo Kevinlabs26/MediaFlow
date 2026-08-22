@@ -87,386 +87,6 @@ class VideoProcessor {
     }
 
 
-    applyTransition(type, duration) {
-        const timeline = this.core.timelineManager;
-        if (!timeline) return;
-
-        const trackId = timeline.selectedTrackId;
-        const index = timeline.selectedTransitionIndex;
-
-        if (index === -1) {
-            this.ui.showToast(window.i18n?.t('creator.video.selectTransition') || 'Please select a transition point on the timeline first', 'warning');
-            return;
-        }
-
-        const segments = timeline.tracks[trackId].segments;
-        if (index >= segments.length) return;
-
-        segments[index].transition = { id: type, duration: duration };
-        this.ui.showToast(window.i18n?.t('creator.video.transitionSet') || '✨ Transition set! Preview in real-time during playback, high quality render on export.', 'success');
-
-        timeline.renderVideoTracks(); // Refresh visual state
-    }
-
-    /**
-     * Render the entire timeline project
-     */
-    async renderProject(options = {}) {
-        if (window.TimelineProjectSnapshot && window.CreatorExportPlanner && window.mediaflow?.creator?.export) {
-            let shouldFallbackToLegacyExport = false;
-            const hasPrimaryMedia = !!(this.core.videoFile && (typeof this.core.videoFile === 'string' || this.core.videoFile.path));
-            if ((!hasPrimaryMedia && !this.core.isAudioOnly) || this.core.isProcessing) {
-                if (!hasPrimaryMedia && !this.core.isAudioOnly) {
-                    this.ui.showToast(window.i18n?.t('creator.toasts.loadVideoFirst') || 'Please load a video file first', 'warning');
-                }
-                return;
-            }
-
-            try {
-                const exportType = this.core.isAudioOnly ? 'audio' : (options.type || 'video+audio');
-                const format = exportType === 'audio' ? 'mp3' : 'mp4';
-                const defaultExt = exportType === 'audio' ? 'mp3' : 'mp4';
-                const defaultName = (this.core.videoFile?.name || this.core.audioFile?.name || 'creator_project')
-                    .replace(/\.[^.]+$/, `_export.${defaultExt}`);
-
-                let savePath = options.savePath;
-                if (savePath) {
-                    const exists = await window.mediaflow?.shell?.fileExists?.(savePath);
-                    const looksLikeDirectory = exists && !/\.[^\\/]+$/.test(savePath);
-                    if (looksLikeDirectory) {
-                        savePath = await window.mediaflow?.path?.join(savePath, defaultName);
-                    }
-                }
-
-                if (!savePath) {
-                    savePath = await this.ui.askSavePath({
-                        title: window.i18n?.t('creator.video.exportTitle') || 'Export Project',
-                        defaultPath: defaultName,
-                        filters: [
-                            { name: exportType === 'audio' ? 'Audio' : 'Video', extensions: [defaultExt] }
-                        ]
-                    });
-                }
-                if (!savePath) return;
-
-                const snapshot = window.TimelineProjectSnapshot.create(this.core);
-                const planner = new window.CreatorExportPlanner(window.CreatorExportCapabilityMatrix);
-                const job = planner.buildJob(snapshot, {
-                    type: exportType,
-                    format,
-                    outputPath: savePath
-                });
-
-                this._currentCreatorExportJobId = job.jobId;
-                this.ui.showProgress(
-                    this.t('creator.video.statusMergingProject', 'Preparing export...'),
-                    0,
-                    true,
-                    () => window.mediaflow?.creator?.cancel?.(job.jobId)
-                );
-
-                const result = await window.mediaflow.creator.export(job);
-                if (!result?.success) {
-                    if (result?.action === 'cancel') {
-                        return { success: false, action: 'cancel' };
-                    }
-
-                    const exportError = new Error(result?.error || (window.i18n?.t('creator.video.errorMerge') || 'Export failed'));
-                    if (result?.details) {
-                        exportError.stack = result.details;
-                    }
-                    throw exportError;
-                }
-
-                this.ui.showSuccess(window.i18n?.t('creator.video.projectExportDone') || 'Project exported successfully!', savePath);
-                return { success: true };
-            } catch (error) {
-                const errorMsg = error.message || '';
-                const isMissingCreatorExportHandler = errorMsg.includes('No handler registered for \'creator:export\'')
-                    || errorMsg.includes('Error invoking remote method \'creator:export\'');
-                const isCancel = /cancel|kill/i.test(errorMsg) || errorMsg.includes('CANCELLED_BY_USER');
-                if (isCancel) {
-                    return { success: false, action: 'cancel' };
-                }
-
-                if (isMissingCreatorExportHandler) {
-                    shouldFallbackToLegacyExport = true;
-                    console.warn('[VideoProcessor] creator:export handler unavailable, falling back to legacy export path');
-                } else {
-                    console.error('[VideoProcessor] Render error:', error);
-                    const summary = window.ErrorUtils?.formatError ? window.ErrorUtils.formatError(error) : errorMsg;
-                    this.ui.showToast((window.i18n?.t('creator.video.mergeFail') || 'Merge Failed') + ': ' + summary, 'error');
-                    if (typeof this.ui.showErrorDetails === 'function') {
-                        this.ui.showErrorDetails(
-                            window.i18n?.t('creator.video.mergeFail') || 'Merge Failed',
-                            summary,
-                            error.stack || errorMsg
-                        );
-                    }
-                    return { success: false, error: errorMsg };
-                }
-
-            } finally {
-                this._currentCreatorExportJobId = null;
-                this.ui.hideProgress();
-            }
-
-            if (!shouldFallbackToLegacyExport) {
-                return;
-            }
-        }
-
-        const hasVideoPath = !!(this.core.videoFile && (typeof this.core.videoFile === 'string' || this.core.videoFile.path));
-        if ((!hasVideoPath && !this.core.isAudioOnly) || this.core.isProcessing) {
-            if (!hasVideoPath && !this.core.isAudioOnly) {
-                this.ui.showToast(window.i18n?.t('creator.toasts.loadVideoFirst') || 'Please load a video file first', 'warning');
-            }
-            return;
-        }
-
-        const timeline = this.core.timelineManager;
-        if (!timeline) return;
-
-        // [NEW] 动态确定主轨：音频模式看 a1，视频模式看 v1
-        const primaryTrackId = this.core.isAudioOnly ? 'a1' : 'v1';
-        const segments = timeline.tracks[primaryTrackId]?.segments || [];
-        
-        if (segments.length === 0) {
-            this.ui.showToast(window.i18n?.t('creator.video.timelineEmpty') || 'Timeline is empty, please add segments first', 'warning');
-            return;
-        }
-
-        // Options from Modal
-        const format = options.format || 'mp4';
-        const exportType = options.type || 'video+audio'; // 'video+audio', 'video', 'audio'
-        let savePath = options.savePath;
-
-        // Convert timeline segments to source segments for multiClip
-        const orderedSegments = [...segments].sort((a, b) => {
-            if (a.start !== b.start) return a.start - b.start;
-            if (a.end !== b.end) return a.end - b.end;
-            return (a.sourceStart || 0) - (b.sourceStart || 0);
-        });
-
-        const sourceSegments = orderedSegments.map(s => {
-            const duration = s.end - s.start;
-            return {
-                start: s.sourceStart || 0,
-                end: (s.sourceStart || 0) + duration,
-                name: s.name
-            };
-        });
-
-        try {
-            // Check if savePath is just a directory and reconstruct if needed
-            if (savePath) {
-                const isDir = await window.mediaflow?.shell.fileExists(savePath).then(async (exists) => {
-                    if (!exists) return false;
-                    // Check if it's a directory by testing if we can write a dummy file or use a separate API if available
-                    // For safety, if it doesn't have an extension, assume it's a directory
-                    return !savePath.includes('.');
-                });
-
-                if (isDir) {
-                    const defaultExt = (exportType === 'audio' || this.core.isAudioOnly) ? 'mp3' : format;
-                    const fileName = (this.core.videoFile?.name || 'audio_project').replace(/\.[^.]+$/, `_export.${defaultExt}`);
-                    savePath = await window.mediaflow?.path.join(savePath, fileName);
-                }
-            }
-
-            // If no savePath provided, ask user
-            if (!savePath) {
-                const defaultExt = (exportType === 'audio' || this.core.isAudioOnly) ? 'mp3' : format;
-                savePath = await this.ui.askSavePath({
-                    title: window.i18n?.t('creator.video.exportTitle') || 'Export Project',
-                    defaultPath: (this.core.videoFile?.name || 'audio_project').replace(/\.[^.]+$/, `_export.${defaultExt}`),
-                    filters: [
-                        { name: (exportType === 'audio' || this.core.isAudioOnly) ? 'Audio' : 'Video', extensions: [defaultExt] }
-                    ]
-                });
-            }
-            if (!savePath) return;
-
-            const hasTransitions = orderedSegments.some(s => s.transition && s.transition.id !== 'none');
-            const hasSpeed = orderedSegments.some(s => s.speed && s.speed !== 1.0);
-            const t = (key, fallback, params) => this.t(key, fallback, params);
-
-            this.ui.showProgress(
-                t('creator.video.statusMergingProject', `Composing project (${sourceSegments.length} segments)...`, { count: sourceSegments.length }),
-                0,
-                true,
-                () => window.mediaflow?.video.cancel()
-            );
-
-            let result;
-
-            // Temporary path if we need to post-process (e.g. mute, extract audio, or mix external audio tracks)
-            const extraAudioTracks = [];
-            if (exportType === 'video+audio') {
-                const volAudio = (document.getElementById('mix-vol-audio')?.value || 100) / 100;
-                
-                // 遍历所有音频轨道 (a1, a2, a3...)
-                Object.keys(timeline.tracks).forEach(trackId => {
-                    if (trackId.startsWith('a')) {
-                        const track = timeline.tracks[trackId];
-                        // 收集该轨道上的所有片段
-                        track.segments.forEach(seg => {
-                            const file = seg.file || this.core.videoFile;
-                            // 只有当片段使用了外部文件，或者片段并非覆盖全长的原视频音轨时才视为额外音轨
-                            if (file?.path) {
-                                // 如果是原视频的音源，通常在 [0:a] 处理，除非用户对其进行了剪辑/位移
-                                // 但为了统一逻辑，除原视频完整音轨外，其余均作为 extra 处理
-                                const isFullOriginalAudio = (file.path === this.core.videoFile.path && seg.start === 0 && seg.end === this.core.videoDuration);
-                                
-                                if (!isFullOriginalAudio) {
-                                    extraAudioTracks.push({
-                                        path: file.path,
-                                        volume: seg.volume !== undefined ? seg.volume : volAudio,
-                                        timelineStart: seg.start,
-                                        sourceStart: seg.sourceStart || 0,
-                                        sourceEnd: (seg.sourceStart || 0) + (seg.end - seg.start) * (seg.speed || 1.0),
-                                        speed: seg.speed || 1.0
-                                    });
-                                }
-                            }
-                        });
-                    }
-                });
-            }
-            const needsPostProcess = exportType !== 'video+audio' || extraAudioTracks.length > 0;
-            
-            const getPath = (f) => (typeof f === 'string' ? f : f?.path);
-            const inputFilePath = getPath(segments[0]?.file) || getPath(this.core.videoFile);
-            
-            if (!inputFilePath) throw new Error('No source file found for rendering');
-
-            let renderPath = savePath;
-            if (needsPostProcess) {
-                // Ensure temp path has correct extension for merge/clip stage
-                // [修复] 如果是音频模式，中间渲染强制使用 .m4a 容器
-                // 原因：后端 multiClip 倾向于使用 AAC 编码，.mp3 容器不支持 AAC 会导致导出失败
-                const tempExt = (exportType === 'audio' || this.core.isAudioOnly) ? 'm4a' : format;
-                renderPath = savePath.replace(/\.[^.]+$/, `_tmp_render.${tempExt}`);
-            }
-
-            if (sourceSegments.length === 1 && !hasTransitions && !hasSpeed) {
-                const onlySegment = sourceSegments[0];
-                result = await this.service.clip(inputFilePath, renderPath, onlySegment.start, onlySegment.end, {
-                    accurate: true
-                });
-            } else if (hasTransitions || hasSpeed) {
-                result = await this.renderProjectWithTransitions(inputFilePath, renderPath, sourceSegments, orderedSegments);
-            } else {
-                result = await this.service.multiClip(inputFilePath, renderPath, sourceSegments, {
-                    accurate: true
-                });
-            }
-
-            if (!result?.success) {
-                throw new Error(result?.error || (window.i18n?.t('creator.video.errorMerge') || 'Export failed'));
-            }
-
-            // Post-processing for Mute, Audio Extract, or Audio Mixing
-            if (extraAudioTracks.length > 0) {
-                this.ui.updateProgress(85, t('creator.video.statusMixingAudio', 'Mixing audio tracks...'));
-                const volVideo = (document.getElementById('mix-vol-video')?.value || 100) / 100;
-                const durationMode = document.getElementById('mix-duration-mode')?.value || 'longest';
-
-                const mixResult = await window.mediaflow?.creator.mixMultiple({
-                    videoPath: renderPath,
-                    audioTracks: extraAudioTracks,
-                    outputPath: savePath,
-                    videoVolume: volVideo,
-                    durationMode: durationMode
-                });
-                if (window.mediaflow?.file?.deleteFile) window.mediaflow.file.deleteFile(renderPath);
-                if (!mixResult?.success) throw new Error(mixResult?.error || 'Failed to mix audio tracks');
-            } else if (exportType === 'audio') {
-                this.ui.updateProgress(90, t('creator.video.statusExtractingAudio', 'Extracting audio...'));
-                const extractResult = await this.service.convert(renderPath, savePath, 'mp3', 'high');
-                if (window.mediaflow?.file?.deleteFile) window.mediaflow.file.deleteFile(renderPath);
-                if (!extractResult.success) throw new Error(extractResult.error || 'Failed to extract audio');
-            } else if (exportType === 'video') {
-                this.ui.updateProgress(90, t('creator.video.statusMuting', 'Removing audio...'));
-                const muteResult = await this.service.removeAudio(renderPath, savePath);
-                if (window.mediaflow?.file?.deleteFile) window.mediaflow.file.deleteFile(renderPath);
-                if (!muteResult.success) throw new Error(muteResult.error || 'Failed to remove audio');
-            }
-
-            this.ui.showSuccess(window.i18n?.t('creator.video.projectExportDone') || 'Project exported successfully!', savePath);
-            return { success: true };
-        } catch (error) {
-            const errorMsg = error.message || '';
-            const isCancel = /cancel|kill/i.test(errorMsg) || errorMsg.includes('CANCELLED_BY_USER');
-            if (isCancel) {
-                return { success: false, action: 'cancel' };
-            }
-            console.error('[VideoProcessor] Render error:', errorMsg);
-            this.ui.showToast((window.i18n?.t('creator.video.mergeFail') || 'Merge Failed') + ': ' + window.ErrorUtils.formatError(error), 'error');
-        } finally {
-            this.ui.hideProgress();
-        }
-    }
-
-    /**
-     * Render project with transitions by generating temp clips and merging them
-     */
-    async renderProjectWithTransitions(inputPath, savePath, sourceSegments, timelineSegments) {
-        const tempFiles = [];
-        try {
-            for (let i = 0; i < sourceSegments.length; i++) {
-                const seg = sourceSegments[i];
-                const tempPath = savePath.replace('.mp4', `_tmp_seg_${i}.mp4`);
-                const t = (key, params) => window.i18n ? window.i18n.t(key, params) : key;
-                this.ui.updateProgress((i / sourceSegments.length) * 30, t('creator.video.statusClippingProgress', { current: i + 1, total: sourceSegments.length }));
-
-                const clipResult = await this.service.clip(inputPath, tempPath, seg.start, seg.end, {
-                    accurate: true
-                });
-                if (!clipResult?.success) throw new Error(window.i18n?.t('creator.video.errorClip') || `Clip ${i} failed`);
-
-                // 应用片段倍速
-                const segmentSpeed = timelineSegments[i].speed || 1.0;
-                if (segmentSpeed !== 1.0) {
-                    const speedTempPath = tempPath.replace('.mp4', `_speed_${i}.mp4`);
-                    const speedResult = await this.service.changeSpeed(tempPath, speedTempPath, segmentSpeed);
-                    if (speedResult?.success) {
-                        // 清理原始剪裁件，并将变速后的文件作为后续合并源
-                        window.mediaflow?.file?.deleteFile?.(tempPath);
-                        tempFiles.push(speedTempPath);
-                    } else {
-                        tempFiles.push(tempPath); // 降级：使用原速
-                    }
-                } else {
-                    tempFiles.push(tempPath);
-                }
-            }
-
-            // Now merge them with transitions
-            // The transition for segment i is what happens between tempFiles[i] and tempFiles[i+1]
-            // We'll assume a global transition for simplicity if multiple aren't supported yet,
-            // but VideoService.merge actually only supports ONE transition if it's the simple list merge.
-            // TODO: Enhance VideoService/FFmpeg to support sequence transitions.
-            // For now, we'll use the FIRST transition found as the global transition if they are all the same,
-            // or just the first transition.
-            const transition = timelineSegments.find(s => s.transition && s.transition.id !== 'none')?.transition || { id: 'none' };
-
-            this.ui.updateProgress(40, window.i18n?.t('creator.video.statusMergingTransitions') || 'Generating transition effects...');
-            return await this.service.merge(tempFiles, savePath, {
-                transition: transition.id,
-                forceReencode: true
-            });
-        } finally {
-            // Cleanup
-            for (const f of tempFiles) {
-                window.mediaflow?.file?.deleteFile?.(f);
-            }
-        }
-    }
-
-    /**
-     * 一键竖屏转换
-     */
     async makeVertical(options = {}) {
         const inputPath = options.inputPath || this.core.videoFile?.path;
         if (!inputPath || (this.core.isProcessing && !options.isBatch)) {
@@ -740,7 +360,7 @@ class VideoProcessor {
                         ratioText = savedPercent > 0 ? ` (节省了 ${savedPercent}% 空间)` : '';
                     }
                     this.ui.showSuccess((window.i18n?.t('creator.video.toastCompressDone') || 'Compression Completed!') + ratioText, savePath);
-                }
+                }
                 return { success: true };
             } else throw new Error(result?.error || (window.i18n?.t('creator.video.errorCompress') || 'Compression Failed'));
         } catch (error) {
@@ -815,7 +435,7 @@ class VideoProcessor {
             }
 
             if (result?.success) {
-                if (!options.isBatch) this.ui.showSuccess(window.i18n?.t('creator.video.toastConvertDone') || 'Conversion Completed!', savePath);
+                if (!options.isBatch) this.ui.showSuccess(window.i18n?.t('creator.video.toastConvertDone') || 'Conversion Completed!', savePath);
                 return { success: true };
             } else throw new Error(result?.error || (window.i18n?.t('creator.video.errorConvert') || 'Conversion Failed'));
         } catch (error) {
@@ -862,7 +482,7 @@ class VideoProcessor {
             const result = await this.service.changeSpeed(inputPath, savePath, speed, options.taskId);
 
             if (result?.success) {
-                if (!options.isBatch) this.ui.showSuccess(window.i18n?.t('creator.video.toastSpeedDone') || 'Speed adjustment completed!', savePath);
+                if (!options.isBatch) this.ui.showSuccess(window.i18n?.t('creator.video.toastSpeedDone') || 'Speed adjustment completed!', savePath);
                 return { success: true };
             } else throw new Error(result?.error || (window.i18n?.t('creator.video.errorSpeed') || 'Speed adjustment failed'));
         } catch (error) {
@@ -912,7 +532,7 @@ class VideoProcessor {
             const result = await this.service.createGIF(inputPath, savePath, { ...opts, taskId: options.taskId });
 
             if (result?.success) {
-                if (!options.isBatch) this.ui.showSuccess(window.i18n?.t('creator.video.toastGifDone') || 'GIF saved!', savePath);
+                if (!options.isBatch) this.ui.showSuccess(window.i18n?.t('creator.video.toastGifDone') || 'GIF saved!', savePath);
                 return { success: true };
             } else throw new Error(result?.error || (window.i18n?.t('creator.video.errorGif') || 'GIF generation failed'));
         } catch (error) {
@@ -1061,7 +681,7 @@ class VideoProcessor {
             });
 
             if (result?.success) {
-                if (!options.isBatch) this.ui.showSuccess(window.i18n?.t('creator.video.toastMuteDone') || 'Audio removed!', savePath);
+                if (!options.isBatch) this.ui.showSuccess(window.i18n?.t('creator.video.toastMuteDone') || 'Audio removed!', savePath);
                 return { success: true };
             } else throw new Error(result?.error || (window.i18n?.t('creator.video.errorMute') || 'Failed to remove audio'));
         } catch (error) {
@@ -1108,7 +728,7 @@ class VideoProcessor {
                 return finalResult;
             }
 
-            if (result?.success) {
+            if (result?.success) {
                 return { success: true };
             }
             return result; // If not success, return the result object (which might contain error)
@@ -1152,7 +772,7 @@ class VideoProcessor {
             if (!detectResult.segments || detectResult.segments.length === 0) {
                 // 如果没有静音，则视为处理完成（输出原文件）
                 const result = await window.mediaflow.creator.removeSilence(inputPath, [], { mode: 'remove', savePath: options.savePath });
-                if (result?.success) {
+                if (result?.success) {
                     return { success: true };
                 } else throw new Error(result?.error || 'Failed to remove silence');
             }
@@ -1163,7 +783,7 @@ class VideoProcessor {
                 detectResult.segments,
                 { mode: 'remove', savePath: options.savePath }
             );
-            if (result?.success) {
+            if (result?.success) {
                 return { success: true };
             } else throw new Error(result?.error || 'Failed to remove silence');
         } catch (error) {

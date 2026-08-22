@@ -572,41 +572,6 @@
       "menuVideo": "Herramientas de video",
       "menuAudio": "Audio / IA"
     },
-    "timeline": {
-      "title": "Línea de tiempo",
-      "trackV1": "V1 Video principal",
-      "trackA1": "A1 Sonido original",
-      "trackA2": "A2 Música fondo",
-      "trackA3": "A3 Efectos",
-      "trackVideo": "Pista video {num}",
-      "trackAudio": "Pista audio {num}",
-      "dropHint": "Suelte música de fondo aquí",
-      "split": "Cortar (S)",
-      "delete": "Eliminar (Supr)",
-      "volume": "Volumen del clip",
-      "addText": "Añadir texto (T)",
-      "snap": "Magnetismo (N)",
-      "menuSplit": "Cortar aquí",
-      "menuDelete": "Eliminar fragmento",
-      "menuUnlink": "Desvincular audio/video",
-      "menuRelink": "Revincular",
-      "menuSeparateAudio": "Separar audio",
-      "menuAddTrackV": "Añadir pista de video",
-      "menuAddTrackA": "Añadir pista de audio",
-      "menuRemoveTrack": "Eliminar esta pista",
-      "mainTrackLocked": "La pista principal no se puede eliminar",
-      "selectionActive": "Herramienta selección activa",
-      "unlinkDone": "Audio y video desvinculados",
-      "linkSuccess": "Vínculo creado para {count} clips",
-      "linkNoTarget": "No se encontraron clips para vincular",
-      "snapOn": "Magnetismo activado",
-      "snapOff": "Magnetismo desactivado",
-      "waveformFail": "Error al generar forma de onda",
-      "menuToStart": "Mover al inicio (alinear a 00:00)",
-      "moveStartToast": "Movido al inicio de la pista",
-      "zoomToFitDone": "Zoom de la línea de tiempo ajustado a la vista general del proyecto",
-      "zoomFit": "Zoom para ajustar a la pantalla"
-    },
     "menu": {
       "speed05": "0.5x (Lento)",
       "speed15": "1.5x (Rápido)",
@@ -765,17 +730,6 @@
       "statusCalculatingMetadata": "Leyendo datos...",
       "audioOnlyMode": "Modo de edición de audio",
       "mergeFail": "Error al fusionar"
-    },
-    "exportTopBtn": "Exportar",
-    "export": {
-      "title": "Ajustes de exportación",
-      "format": "Formato de exportación",
-      "type": "Tipo de contenido",
-      "typeVideoAudio": "Vídeo + Audio",
-      "typeVideoOnly": "Solo vídeo (Silenciado)",
-      "typeAudioOnly": "Solo audio (MP3)",
-      "path": "Ruta de guardado",
-      "startBtn": "Iniciar exportación"
     }
   }
 }

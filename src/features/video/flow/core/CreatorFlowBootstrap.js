@@ -1,7 +1,6 @@
 class CreatorFlowBootstrap {
     constructor(flow) {
         this.flow = flow;
-        this._timelineActionHandler = null;
     }
 
     closest(target, selector) {
@@ -15,7 +14,6 @@ class CreatorFlowBootstrap {
         flow.uiManager.init();
         flow.previewHandler.init();
         flow.audioHandler.init();
-        flow.audioMixer.init(flow.previewHandler.audioCtx, flow.previewHandler.gainNode);
         flow.loadGlobalSettings();
 
         this.bindResetButton();
@@ -25,16 +23,10 @@ class CreatorFlowBootstrap {
         }
 
         this.initOptionalModules();
-        flow.subtitleLaneManager?.init?.();
-        flow.subtitleCutActions?.init?.();
-        flow.subtitlePreviewOverlay?.init?.();
-
         flow.batchFlow = new window.BatchCreatorFlow(flow);
         flow.batchFlow.init();
 
-        this.setupResizeHandle();
         this.setupPiP();
-        this.bindTimelineActions();
     }
 
     initOptionalModules() {
@@ -53,112 +45,10 @@ class CreatorFlowBootstrap {
         } else {
             console.error('VideoProcessor not found');
         }
-
-        if (window.CreatorTimelineManager) {
-            flow.timelineManager = new window.CreatorTimelineManager(flow);
-            flow.timelineManager.init();
-            this.bindTimelinePreviewSync();
-        } else {
-            console.error('CreatorTimelineManager not found');
-        }
-    }
-
-    bindTimelinePreviewSync() {
-        const flow = this.flow;
-        if (!flow.timelineManager || !flow.previewHandler) return;
-
-        flow.timelineManager.onSeek = (timelineOrSourceTime, sourceTime = null) => {
-            const timelineTime = flow.timelineManager?.currentTime || 0;
-            const resolvedSourceTime = Number.isFinite(sourceTime) ? sourceTime : timelineOrSourceTime;
-
-            if (Number.isFinite(resolvedSourceTime)) {
-                flow.previewHandler.seekTo?.(resolvedSourceTime);
-            }
-
-            void flow.previewHandler.alignPlaybackToTimeline?.();
-
-            const snapshot = flow.previewHandler.getPlaybackSnapshot?.(timelineTime) || null;
-            flow.audioMixer?.sync?.(timelineTime, false, snapshot);
-        };
     }
 
     bindResetButton() {
         document.getElementById('btn-reset-video')?.addEventListener('click', () => this.flow.reset());
-    }
-
-    bindTimelineActions() {
-        if (this._timelineActionHandler) {
-            document.removeEventListener('timeline-action', this._timelineActionHandler);
-        }
-
-        this._timelineActionHandler = (e) => {
-            if (e.detail?.action !== 'separateAudio') {
-                return;
-            }
-
-            this.flow.uiManager.showProperties('audio');
-
-            setTimeout(() => {
-                const btnSeparate = document.getElementById('btn-demucs-separate');
-                if (btnSeparate) {
-                    btnSeparate.click();
-                }
-            }, 300);
-        };
-
-        document.addEventListener('timeline-action', this._timelineActionHandler);
-    }
-
-    setupResizeHandle() {
-        const handle = document.getElementById('video-resize-handle');
-        const mainLayout = document.querySelector('.creator-main-layout');
-        if (!handle || !mainLayout) return;
-
-        const savedHeight = localStorage.getItem('creator_timeline_height');
-        if (savedHeight) {
-            mainLayout.style.gridTemplateRows = `1fr ${savedHeight}px`;
-        }
-
-        let startY;
-        let startHeight;
-
-        const onMouseMove = (e) => {
-            const deltaY = e.clientY - startY;
-            let newHeight = startHeight - deltaY;
-
-            const maxHeight = window.innerHeight * 0.8;
-            if (newHeight < 180) newHeight = 180;
-            if (newHeight > maxHeight) newHeight = maxHeight;
-
-            mainLayout.style.gridTemplateRows = `1fr ${newHeight}px`;
-        };
-
-        const onMouseUp = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-            mainLayout.classList.remove('resizing');
-
-            const currentRows = getComputedStyle(mainLayout).gridTemplateRows.split(' ');
-            const finalHeight = currentRows[currentRows.length - 1];
-            localStorage.setItem('creator_timeline_height', finalHeight.replace('px', ''));
-
-            document.body.style.cursor = '';
-            handle.classList.remove('active');
-        };
-
-        handle.onmousedown = (e) => {
-            e.preventDefault();
-            startY = e.clientY;
-
-            const timelineContainer = document.getElementById('creator-timeline-workspace');
-            startHeight = timelineContainer ? timelineContainer.offsetHeight : 260;
-
-            mainLayout.classList.add('resizing');
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-            document.body.style.cursor = 'row-resize';
-            handle.classList.add('active');
-        };
     }
 
     setupPiP() {

@@ -159,7 +159,6 @@
     "loadingFeature": {
       "generic": "Cargando…",
       "enhance": "Cargando AI Enhance…",
-      "editor": "Cargando editor…",
       "subtitle": "Cargando estudio de subtítulos…",
       "creator": "Cargando herramientas Creator…"
     }

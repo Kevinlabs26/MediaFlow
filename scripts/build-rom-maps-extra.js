@@ -7,7 +7,6 @@ module.exports = function registerRomExtra(setAll) {
     setAll('creator.batch.clearQueueTitle', 'Tout effacer', 'Vaciar todas las tareas', 'Limpar todas as tarefas', 'Очистить все задачи');
     setAll('creator.silence.statsOriginal', 'Original : {time}', 'Original: {time}', 'Original: {time}', 'Оригинал: {time}');
     setAll('creator.segment.defaultName', 'Segment {index}', 'Segmento {index}', 'Segmento {index}', 'Сегмент {index}');
-    setAll('creator.export.typeVideoAudio', 'Vidéo + Audio', 'Vídeo + Audio', 'Vídeo + Áudio', 'Видео + Аудио');
     setAll('creator.denoise.engine', 'Moteur', 'Motor', 'Motor', 'Движок');
     setAll('creator.watermark.typeText', 'Texte', 'Texto', 'Texto', 'Текст');
 

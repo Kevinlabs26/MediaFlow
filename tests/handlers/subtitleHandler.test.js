@@ -7,11 +7,10 @@ const handlers = {};
 const mockIpcHandle = jest.fn((name, fn) => {
     handlers[name] = fn;
 });
-const mockCreatorRun = jest.fn();
-const mockCreatorCancel = jest.fn();
 const mockRenderOverlayVideo = jest.fn();
 const mockSpawn = jest.fn();
 const mockMkdtemp = jest.fn();
+const mockWriteFile = jest.fn();
 const mockCopyFile = jest.fn();
 const mockLstat = jest.fn();
 const mockRm = jest.fn();
@@ -30,11 +29,6 @@ jest.mock('electron', () => ({
     }
 }));
 
-jest.mock('../../src/services/export/CreatorExportRunner', () => ({
-    run: (...args) => mockCreatorRun(...args),
-    cancelTask: (...args) => mockCreatorCancel(...args)
-}));
-
 jest.mock('../../src/handlers/subtitle/cssSubtitleRenderer', () => ({
     renderOverlayVideo: (...args) => mockRenderOverlayVideo(...args)
 }));
@@ -51,6 +45,7 @@ jest.mock('child_process', () => ({
 jest.mock('fs', () => ({
     promises: {
         mkdtemp: (...args) => mockMkdtemp(...args),
+        writeFile: (...args) => mockWriteFile(...args),
         copyFile: (...args) => mockCopyFile(...args),
         lstat: (...args) => mockLstat(...args),
         rm: (...args) => mockRm(...args),
@@ -65,14 +60,11 @@ describe('subtitleHandler source segment burn path', () => {
         Object.keys(handlers).forEach((key) => delete handlers[key]);
         jest.clearAllMocks();
         mockMkdtemp.mockResolvedValue('C:/tmp/mediaflow-subtitle-trim');
+        mockWriteFile.mockResolvedValue();
         mockCopyFile.mockResolvedValue();
         mockLstat.mockRejectedValue(new Error('missing'));
         mockRm.mockResolvedValue();
         mockUnlink.mockResolvedValue();
-        mockCreatorRun.mockResolvedValue({
-            success: true,
-            outputPath: 'C:/tmp/mediaflow-subtitle-trim/trimmed_source.mp4'
-        });
         mockRenderOverlayVideo.mockResolvedValue({
             overlayPath: 'C:/tmp/overlay.mp4',
             cleanupPaths: []
@@ -110,25 +102,24 @@ describe('subtitleHandler source segment burn path', () => {
 
         const result = await handlers['subtitle:burn']({ sender }, params);
 
-        expect(mockCreatorRun).toHaveBeenCalledWith(
-            expect.objectContaining({
-                exportKind: 'video+audio',
-                primaryAudioTrackId: 'a1',
-                primaryVideoClips: [
-                    expect.objectContaining({ sourceStart: 0, sourceEnd: 2 }),
-                    expect.objectContaining({ sourceStart: 5, sourceEnd: 7 })
-                ],
-                primaryAudioClips: [
-                    expect.objectContaining({ sourceStart: 0, sourceEnd: 2, assetPath: 'C:/video/input.mp4' }),
-                    expect.objectContaining({ sourceStart: 5, sourceEnd: 7, assetPath: 'C:/video/input.mp4' })
-                ]
-            }),
-            expect.objectContaining({ onProgress: expect.any(Function) })
+        expect(mockSpawn.mock.calls[0][1]).toEqual(expect.arrayContaining([
+            '-ss', '0', '-t', '2', '-map', '0:a?'
+        ]));
+        expect(mockSpawn.mock.calls[1][1]).toEqual(expect.arrayContaining([
+            '-ss', '5', '-t', '2', '-map', '0:a?'
+        ]));
+        expect(mockSpawn.mock.calls[2][1]).toEqual(expect.arrayContaining([
+            '-f', 'concat', '-c', 'copy'
+        ]));
+        expect(mockWriteFile).toHaveBeenCalledWith(
+            path.normalize('C:/tmp/mediaflow-subtitle-trim/concat.txt'),
+            expect.stringContaining('segment_0.mp4'),
+            'utf8'
         );
         expect(mockRenderOverlayVideo).toHaveBeenCalledWith(expect.objectContaining({
             duration: 4
         }));
-        const ffmpegArgs = mockSpawn.mock.calls[0][1];
+        const ffmpegArgs = mockSpawn.mock.calls[3][1];
         expect(ffmpegArgs).toEqual(expect.arrayContaining([
             '-i',
             path.normalize('C:/tmp/mediaflow-subtitle-trim/trimmed_source.mp4'),

@@ -39,7 +39,6 @@ t('creator.denoise.engineDeepfilter', 'DeepFilterNet AI');
 t('creator.watermark.typeText', '텍스트');
 t('creator.segment.defaultName', '세그먼트 {index}');
 t('creator.transform.cropDesktop', '16:9 (데스크톱)');
-t('creator.export.typeVideoAudio', '동영상 + 오디오');
 
 t('download.pause', '일시정지');
 t('download.playlist', '재생목록');

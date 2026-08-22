@@ -204,9 +204,18 @@ function installCreatorMocks() {
     window.CreatorAudioHandler = class {
         init() {}
     };
-    window.TimelineAudioMixer = class {
-        init() {}
+    window.CreatorFlowBootstrap = class {
+        constructor(flow) {
+            this.flow = flow;
+        }
+        init() {
+            this.flow.videoProcessor = new window.VideoProcessor(this.flow);
+            this.flow.videoProcessor.init();
+            this.flow.batchFlow = new window.BatchCreatorFlow(this.flow);
+            this.flow.batchFlow.init();
+        }
     };
+    window.CreatorFlowToolDispatcher = class {};
     window.SilenceProcessor = class {
         constructor(flow) {
             this.flow = flow;
@@ -214,12 +223,6 @@ function installCreatorMocks() {
         init() {}
     };
     window.VideoProcessor = class {
-        constructor(flow) {
-            this.flow = flow;
-        }
-        init() {}
-    };
-    window.CreatorTimelineManager = class {
         constructor(flow) {
             this.flow = flow;
         }
@@ -858,10 +861,9 @@ describe('Renderer smoke tests', () => {
             await withRendererGlobals(() => app.init());
 
             expect(app.router.currentPage).toBe('download');
-            // Creator / Editor / Subtitle are lazy-loaded; boot leaves them null/undefined
+            // Creator / Subtitle are lazy-loaded; boot leaves them null/undefined
             expect(app.creatorFlow == null).toBe(true);
             expect(app.subtitleFlow == null).toBe(true);
-            expect(app.editorFlow == null).toBe(true);
             expect(app.pixelFlow).toBeUndefined();
         } finally {
             window.CreatorFlow = previousCreatorFlow;
@@ -1288,8 +1290,7 @@ describe('Renderer smoke tests', () => {
         expect(flow.elements.engineLogContent.textContent).toContain('settings.engineUpdating');
     });
 
-    it('routes downloaded files into CreatorFlow automatically', () => {
-        jest.useFakeTimers();
+    it('routes downloaded files into CreatorFlow automatically', async () => {
         try {
             require('../../src/features/download/DownloadActionHandler');
 
@@ -1307,18 +1308,19 @@ describe('Renderer smoke tests', () => {
             window.creatorFlow = {
                 addLocalFile: jest.fn()
             };
+            window.FeatureLoader = {
+                ensureCreator: jest.fn().mockResolvedValue(window.creatorFlow)
+            };
 
             const handler = new window.DownloadActionHandler(manager);
-            handler.sendToCreator();
+            await handler.sendToCreator();
 
             expect(app.switchPage).toHaveBeenCalledWith('creator');
-
-            jest.runAllTimers();
-
+            expect(window.FeatureLoader.ensureCreator).toHaveBeenCalledWith(app);
             expect(window.creatorFlow.addLocalFile).toHaveBeenCalledWith('C:/Downloads/sample.mp4');
         } finally {
-            jest.useRealTimers();
             delete window.creatorFlow;
+            delete window.FeatureLoader;
         }
     });
 

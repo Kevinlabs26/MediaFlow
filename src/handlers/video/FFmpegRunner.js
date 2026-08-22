@@ -181,10 +181,13 @@ class FFmpegRunner {
                     const support = {
                         h264_nvenc: output.includes('h264_nvenc'), // NVIDIA
                         hevc_nvenc: output.includes('hevc_nvenc'),
+                        av1_nvenc: output.includes('av1_nvenc'),
                         h264_qsv: output.includes('h264_qsv'),     // Intel
                         hevc_qsv: output.includes('hevc_qsv'),
+                        av1_qsv: output.includes('av1_qsv'),
                         h264_amf: output.includes('h264_amf'),     // AMD
-                        hevc_amf: output.includes('hevc_amf')
+                        hevc_amf: output.includes('hevc_amf'),
+                        av1_amf: output.includes('av1_amf')
                     };
                     this._hwCache = support;
                     console.log('[FFmpegRunner] Hardware Acceleration Support:', support);
@@ -222,7 +225,12 @@ class FFmpegRunner {
             if (hw.hevc_amf) return 'hevc_amf';
             return 'libx265';
         }
-        if (codec === 'av1') return 'libsvtav1';
+        if (codec === 'av1') {
+            if (hw.av1_nvenc) return 'av1_nvenc';
+            if (hw.av1_qsv) return 'av1_qsv';
+            if (hw.av1_amf) return 'av1_amf';
+            return 'libaom-av1';
+        }
         return 'libx264';
     }
 }

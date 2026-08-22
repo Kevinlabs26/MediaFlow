@@ -66,24 +66,6 @@ const TransitionManager = {
     },
 
     /**
-     * 更新属性面板中的转场设置 (由时间轴选中触发)
-     * @param {Object} transition 转场数据 {id, duration}
-     */
-    updatePanel(transition) {
-        const select = document.getElementById('prop-transition-type');
-        const durationInput = document.getElementById('prop-transition-duration');
-        if (!select || !transition) return;
-
-        select.value = transition.id || 'none';
-        if (durationInput) {
-            durationInput.value = transition.duration || 1.0;
-        }
-
-        // 更新预览 (如果有预览容器)
-        this.updatePreview('prop-transition-preview', select.value);
-    },
-
-    /**
      * 更新预览组件状态
      * @param {string} containerId 预览容器 ID
      * @param {string} transitionId 选中的转场效果 ID
@@ -130,14 +112,6 @@ const TransitionManager = {
             container.classList.add(config.css);
             container.classList.add('tp-animating');
         }
-    },
-
-    /**
-     * 获取 FFmpeg 的 xfade 键值
-     */
-    getXfadeKey(id) {
-        const config = this.transitions.find(t => t.id === id);
-        return config ? config.xfade : 'none';
     },
 
     _getFallbackLabel(id) {

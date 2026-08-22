@@ -11,7 +11,6 @@ class CreatorPreviewBootstrap {
     init() {
         this.cacheElements();
         this.bindEvents();
-        this.setupAudioNodes();
     }
 
     bindEvents() {
@@ -54,7 +53,6 @@ class CreatorPreviewBootstrap {
         preview.elements = {
             previewStage: document.querySelector('#page-creator .video-preview-full'),
             video: document.getElementById('creator-video-preview'),
-            videoStandby: document.getElementById('creator-video-preview-standby'),
             audioPlayer: document.getElementById('creator-audio-preview'),
             audioPlaceholder: document.getElementById('audio-placeholder'),
             duration: document.getElementById('creator-duration'),
@@ -65,62 +63,17 @@ class CreatorPreviewBootstrap {
             filename: document.getElementById('creator-filename')
         };
 
-        preview.ensureStandbyVideo();
-    }
-
-    setupAudioNodes() {
-        const preview = this.preview;
-        const player = preview.app.isAudioOnly ? preview.elements.audioPlayer : preview.elements.video;
-        if (!player) return;
-
-        try {
-            if (!preview.audioCtx || preview.audioCtx.state === 'closed') {
-                preview.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                preview.gainNode = null;
-                preview.audioSource = null;
-            }
-
-            if (!preview.gainNode) {
-                preview.gainNode = preview.audioCtx.createGain();
-                preview.gainNode.connect(preview.audioCtx.destination);
-            }
-
-            if (preview.audioSource) {
-                if (preview.audioSource.context === preview.audioCtx && preview.audioSource.mediaElement === player) {
-                    return;
-                }
-                try {
-                    preview.audioSource.disconnect();
-                } catch (e) { void e; }
-            }
-
-            preview.audioSource = preview.audioCtx.createMediaElementSource(player);
-            preview.gainNode.channelCount = 2;
-            preview.gainNode.channelCountMode = 'explicit';
-            preview.gainNode.channelInterpretation = 'speakers';
-            preview.audioSource.connect(preview.gainNode);
-
-            console.log('[Preview] Web Audio API master link established');
-        } catch (err) {
-            console.warn('[Preview] Web Audio API initialization failed:', err);
-        }
     }
 
     reset() {
         const preview = this.preview;
-        const { video, videoStandby, audioPlayer } = preview.elements;
+        const { video, audioPlayer } = preview.elements;
 
         if (video) {
             video.pause();
             video.removeAttribute('src');
             video.load();
             video.style.transform = '';
-        }
-
-        if (videoStandby) {
-            videoStandby.pause();
-            videoStandby.removeAttribute('src');
-            videoStandby.load();
         }
 
         if (audioPlayer) {
@@ -130,8 +83,6 @@ class CreatorPreviewBootstrap {
         }
 
         preview.videoDuration = 0;
-        preview._currentVideoSrc = '';
-        preview._standbyVideoSrc = '';
     }
 }
 

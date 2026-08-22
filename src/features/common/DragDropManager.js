@@ -54,15 +54,6 @@ class DragDropManager {
             return false;
         }
 
-        if (currentPage === 'editor' && (this._isVideoFile(firstFile) || this._isAudioFile(firstFile) || this._isImageFile(firstFile))) {
-            if (window.editorFlow?.handleFileSelect) {
-                window.editorFlow.handleFileSelect(fileArray);
-                return true;
-            }
-            // Editor not loaded yet — async path will ensureEditor
-            return false;
-        }
-
         if (currentPage === 'transcribe' && (this._isVideoFile(firstFile) || this._isAudioFile(firstFile)) && window.scribeFlow) {
             window.scribeFlow.handleFilesSelect(fileArray);
             return true;
@@ -127,25 +118,6 @@ class DragDropManager {
             }
 
             const firstFile = files[0];
-            const fileArray = Array.from(files);
-
-            // Already on Editor: ensure scripts, then import media
-            if (this.app.router.currentPage === 'editor'
-                && (this._isVideoFile(firstFile) || this._isAudioFile(firstFile) || this._isImageFile(firstFile))) {
-                try {
-                    const flow = window.FeatureLoader?.ensureEditor
-                        ? await window.FeatureLoader.ensureEditor(this.app)
-                        : window.editorFlow;
-                    if (flow?.handleFileSelect) {
-                        flow.handleFileSelect(fileArray);
-                        return;
-                    }
-                } catch (e) {
-                    console.error('[DragDrop] ensureEditor failed:', e);
-                    this.app.showToast(window.i18n?.t?.('common.loadFailed') || 'Failed to load Editor', 'error');
-                    return;
-                }
-            }
 
             // Already on Subtitle: ensure scripts, then load video
             if (this.app.router.currentPage === 'subtitle' && this._isVideoFile(firstFile) && firstFile.path) {

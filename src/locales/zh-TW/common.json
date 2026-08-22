@@ -166,7 +166,6 @@
     "loadingFeature": {
       "generic": "載入中…",
       "enhance": "正在載入 AI 增強…",
-      "editor": "正在載入剪輯…",
       "subtitle": "正在載入字幕工作台…",
       "creator": "正在載入 Creator 工具…"
     }

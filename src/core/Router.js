@@ -80,31 +80,6 @@ class Router {
             }
         }
 
-        if (pageId === 'editor') {
-            try {
-                const flow = window.FeatureLoader?.ensureEditor
-                    ? await window.FeatureLoader.ensureEditor(this.app)
-                    : window.editorFlow;
-                if (flow && !flow._featureLoaderInited && typeof flow.init === 'function') {
-                    await flow.init();
-                    flow._featureLoaderInited = true;
-                }
-                setTimeout(() => {
-                    try {
-                        flow?.renderCurrentState?.();
-                    } catch (error) {
-                        console.error('[Router] Failed to refresh editor view after page switch:', error);
-                    }
-                }, 0);
-            } catch (editorErr) {
-                console.error('[Router] Failed to load Editor feature:', editorErr);
-                this.app?.showToast?.(
-                    window.i18n?.t?.('common.loadFailed') || 'Failed to load Editor',
-                    'error'
-                );
-            }
-        }
-
         if (pageId === 'subtitle') {
             try {
                 const flow = window.FeatureLoader?.ensureSubtitle
@@ -211,15 +186,11 @@ class Router {
                         : window.creatorFlow;
                     if (!flow) return;
 
-                    const imported = await flow.importPendingWorkflow?.({
-                        navigationParams: params
-                    });
-
-                    if (!imported && params.videoPath) {
+                    if (params.videoPath) {
                         await flow.addLocalFile?.(params.videoPath);
                     }
                 } catch (error) {
-                    console.error('[Router] Failed to import creator workflow:', error);
+                    console.error('[Router] Failed to open creator media:', error);
                 }
             }, 0);
         }
@@ -247,27 +218,6 @@ class Router {
             }
         }
 
-        if (page === 'editor') {
-            setTimeout(async () => {
-                try {
-                    const flow = window.FeatureLoader?.ensureEditor
-                        ? await window.FeatureLoader.ensureEditor(this.app)
-                        : window.editorFlow;
-                    if (!flow) return;
-
-                    if (params.mediaFile) {
-                        await flow.handleFileSelect?.(params.mediaFile);
-                        return;
-                    }
-
-                    if (params.videoPath) {
-                        await flow.addLocalFile?.(params.videoPath);
-                    }
-                } catch (error) {
-                    console.error('[Router] Failed to open editor media:', error);
-                }
-            }, 0);
-        }
     }
 }
 

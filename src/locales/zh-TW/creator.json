@@ -572,41 +572,6 @@
       "menuVideo": "影片工具",
       "menuAudio": "音訊/AI"
     },
-    "timeline": {
-      "title": "時間軸",
-      "trackV1": "V1 主影片",
-      "trackA1": "A1 影片原聲",
-      "trackA2": "A2 背景音樂",
-      "trackA3": "A3 環境音效",
-      "trackVideo": "影片軌道 {num}",
-      "trackAudio": "音訊軌道 {num}",
-      "dropHint": "拖拽背景音樂到此處",
-      "split": "分割 (S)",
-      "delete": "刪除 (Del)",
-      "volume": "調節選中片段音量",
-      "addText": "在當前位置添加文字 (T)",
-      "snap": "自動吸附 (N)",
-      "menuSplit": "在此處剪斷",
-      "menuDelete": "刪除片段",
-      "menuUnlink": "打散音畫熱鏈",
-      "menuRelink": "重新建立連結",
-      "menuSeparateAudio": "分離音訊",
-      "menuAddTrackV": "添加影片軌道",
-      "menuAddTrackA": "添加音訊軌道",
-      "menuRemoveTrack": "移除此軌道",
-      "mainTrackLocked": "主軌道不可刪除",
-      "selectionActive": "選擇工具已激活",
-      "unlinkDone": "音畫連結已解除",
-      "linkSuccess": "已成功建立 {count} 個片段的連結",
-      "linkNoTarget": "未找到可對齊的片段",
-      "snapOn": "吸附功能已開啟",
-      "snapOff": "吸附功能已關閉",
-      "waveformFail": "音訊皮形提取失敗",
-      "menuToStart": "移至起點 (一鍵對齊)",
-      "moveStartToast": "已移至軌道最前端",
-      "zoomToFitDone": "已自動調整縮放以適配項目全貌",
-      "zoomFit": "縮放以適應屏幕"
-    },
     "menu": {
       "speed05": "0.5x (慢速)",
       "speed15": "1.5x (加速)",
@@ -765,17 +730,6 @@
       "statusCalculatingMetadata": "正在加載影片中繼資料...",
       "audioOnlyMode": "音頻編輯模式",
       "mergeFail": "合併失敗"
-    },
-    "exportTopBtn": "匯出",
-    "export": {
-      "title": "匯出設置",
-      "format": "匯出格式",
-      "type": "匯出內容",
-      "typeVideoAudio": "視頻 + 音頻",
-      "typeVideoOnly": "僅視頻 (無聲)",
-      "typeAudioOnly": "僅音頻",
-      "path": "保存路徑",
-      "startBtn": "開始匯出"
     }
   }
 }

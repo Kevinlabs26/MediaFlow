@@ -95,35 +95,6 @@ class QuickToolsRenderer {
     }
 
     /**
-     * 在检查器侧边栏渲染紧凑型工具磁贴
-     */
-    renderInInspector() {
-        const toolbox = document.getElementById('inspector-toolbox');
-        if (!toolbox) return;
-
-        const tools = this.getQuickToolsData();
-        const t = (key) => window.i18n ? window.i18n.t(key) : key;
-
-        toolbox.innerHTML = tools.map(tool => `
-            <div class="toolbox-item" id="toolbox-item-${tool.id}" 
-                data-i18n="[title]${tool.descKey}" title="${t(tool.descKey)}">
-                <i class="${tool.icon}"></i>
-                <span data-i18n="${tool.titleKey}">${t(tool.titleKey)}</span>
-            </div>
-        `).join('');
-
-        // 绑定点击事件
-        tools.forEach(tool => {
-            const el = document.getElementById(`toolbox-item-${tool.id}`);
-            if (el) {
-                el.onclick = () => {
-                    this.uiManager.focusTool(tool.id);
-                };
-            }
-        });
-    }
-
-    /**
      * 根据媒体类型更新工具可用性
      */
     updateToolState(isAudio) {
@@ -131,18 +102,13 @@ class QuickToolsRenderer {
         tools.forEach(tool => {
             // 更新底部大卡片
             const gridEl = document.getElementById(`quick-tool-${tool.id}`);
-            // 更新侧边栏小磁贴
-            const boxEl = document.getElementById(`toolbox-item-${tool.id}`);
-
             const videoOnlyTools = ['vertical', 'gif', 'crop'];
             const shouldDisable = isAudio && videoOnlyTools.includes(tool.id);
 
-            [gridEl, boxEl].forEach(el => {
-                if (!el) return;
-                el.classList.toggle('disabled', shouldDisable);
-                el.style.opacity = shouldDisable ? '0.4' : '1';
-                el.style.pointerEvents = shouldDisable ? 'none' : 'auto';
-            });
+            if (!gridEl) return;
+            gridEl.classList.toggle('disabled', shouldDisable);
+            gridEl.style.opacity = shouldDisable ? '0.4' : '1';
+            gridEl.style.pointerEvents = shouldDisable ? 'none' : 'auto';
         });
     }
 }

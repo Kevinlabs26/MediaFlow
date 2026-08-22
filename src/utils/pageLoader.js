@@ -32,7 +32,6 @@ class PageLoader {
             'transcribe',
             'compress',
             'creator',
-            'editor',
             'mobile',
             'extension',
             'history',

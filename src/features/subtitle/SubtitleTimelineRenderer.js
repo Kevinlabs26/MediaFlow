@@ -415,12 +415,10 @@ class SubtitleTimelineRenderer {
             return;
         }
 
-        // 动态标签间隔 (避免文本过密重叠，预留足够像素空间)
-        let labelInterval = 1;
-        if (step < 2) labelInterval = 30; // 极小缩放：每30秒一个标签
-        else if (step < 5) labelInterval = 10;
-        else if (step < 15) labelInterval = 5;
-        else if (step < 35) labelInterval = 2;
+        // 每个标签至少留 72px；缩放越小，自动使用更大的整洁时间间隔。
+        const labelIntervals = [1, 2, 5, 10, 20, 30, 60, 120, 300, 600, 1200, 1800, 3600];
+        const labelInterval = labelIntervals.find((seconds) => seconds * step >= 72)
+            || labelIntervals[labelIntervals.length - 1];
 
         // 动态刻度间隔 (避免刻度线黏成一团)
         let tickInterval = 1;

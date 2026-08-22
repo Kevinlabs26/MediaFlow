@@ -140,31 +140,6 @@ class SilenceProcessor {
             bar.appendChild(marker);
         });
 
-        // Pro Integration: Highlight on Timeline A1 Track
-        if (this.core.timelineManager) {
-            const trackContainer = document.getElementById('timeline-waveform-a1');
-            if (trackContainer) {
-                // Clear old highlights
-                trackContainer.querySelectorAll('.silence-highlight').forEach(el => el.remove());
-
-                const pixelsPerSecond = this.core.timelineManager.pixelsPerSecond * (this.core.timelineManager.zoomLevel / 100);
-
-                result.segments.forEach(seg => {
-                    const el = document.createElement('div');
-                    el.className = 'silence-highlight';
-                    el.style.position = 'absolute';
-                    el.style.left = `${seg.start * pixelsPerSecond}px`;
-                    el.style.width = `${(seg.end - seg.start) * pixelsPerSecond}px`;
-                    el.style.height = '100%';
-                    el.style.top = '0';
-                    el.style.background = 'rgba(239, 68, 68, 0.3)'; // Red transparent highlight
-                    el.style.borderLeft = '1px solid #ef4444';
-                    el.style.borderRight = '1px solid #ef4444';
-                    el.style.pointerEvents = 'none';
-                    trackContainer.appendChild(el);
-                });
-            }
-        }
     }
 
     /**
@@ -222,7 +197,7 @@ class SilenceProcessor {
                 throw new Error(result?.error || (window.i18n?.t('creator.silence.processFail') || 'Processing failed'));
             }
         } catch (error) {
-            const msg = error && error.message != null ? String(error.message) : String(error || '');
+            const msg = String(error?.message ?? error ?? '');
             if (msg.includes('User cancelled') || msg.includes('cancelled')) {
                 window.app?.showToast(window.i18n?.t('creator.silence.processCancel') || 'Task cancelled', 'info');
             } else {

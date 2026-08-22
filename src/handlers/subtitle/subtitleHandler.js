@@ -11,7 +11,6 @@ const { spawn } = require('child_process');
 const { getFfmpegPath } = require('../../utils/binaries');
 const SRTParser = require('./srtParser');
 const CSSSubtitleRenderer = require('./cssSubtitleRenderer');
-const creatorExportRunner = require('../../services/export/CreatorExportRunner');
 
 const { createProgressThrottler } = require('../../utils/progressThrottle');
 
@@ -123,64 +122,28 @@ function hasTrimmedSourceSegments(segments = [], duration = 0) {
         || Math.abs((first.end || 0) - Number(duration || 0)) > 0.01;
 }
 
-function buildSourceTrimJob(videoPath, sourceSegments, outputPath) {
-    let cursor = 0;
-    const primaryAudioClips = [];
-    const primaryVideoClips = sourceSegments.map((segment, index) => {
-        const clipDuration = Math.max(0.01, Number(segment.end || 0) - Number(segment.start || 0));
-        const sourceStart = Number(segment.start || 0);
-        const sourceEnd = Number(segment.end || 0);
-        const clip = {
-            clipId: `subtitle_source_${index}`,
-            trackId: 'v1',
-            trackType: 'video',
-            assetPath: videoPath,
-            timelineStart: cursor,
-            timelineEnd: cursor + clipDuration,
-            sourceStart,
-            sourceEnd,
-            speed: 1,
-            volume: 1,
-            transition: { id: 'none', duration: 0 },
-            enabled: true,
-            muted: false,
-            groupId: null,
-            name: `Source ${index + 1}`
-        };
-        primaryAudioClips.push({
-            ...clip,
-            clipId: `subtitle_source_audio_${index}`,
-            trackId: 'a1',
-            trackType: 'audio',
-            name: `Source audio ${index + 1}`
-        });
-        cursor += clipDuration;
-        return clip;
-    });
+function runTrimCommand(args, controller) {
+    return new Promise((resolve, reject) => {
+        if (controller?.cancelled) return reject(createCancelledError());
 
-    return {
-        jobId: `subtitle_source_trim_${Date.now()}`,
-        output: {
-            path: outputPath,
-            format: 'mp4',
-            type: 'video+audio'
-        },
-        exportKind: 'video+audio',
-        timelineDuration: cursor,
-        snapshot: { tracks: [] },
-        primaryVideoTrackId: 'v1',
-        primaryAudioTrackId: 'a1',
-        primaryVideoClips,
-        primaryAudioClips,
-        overlayAudioClips: [],
-        subtitleTracks: [],
-        stages: [
-            { id: 'prepare', label: 'Preparing source trim', weight: 10 },
-            { id: 'materialize', label: 'Trimming source segments', weight: 50 },
-            { id: 'compose', label: 'Joining kept segments', weight: 30 },
-            { id: 'finalize', label: 'Finalizing source trim', weight: 10 }
-        ]
-    };
+        const proc = spawn(getFfmpegPath(), args, { windowsHide: true });
+        if (controller) controller.trimFfmpegProc = proc;
+        let stderr = '';
+
+        proc.stderr.on('data', (data) => {
+            stderr = (stderr + data.toString()).slice(-5000);
+        });
+        proc.on('close', (code) => {
+            if (controller?.trimFfmpegProc === proc) controller.trimFfmpegProc = null;
+            if (controller?.cancelled) return reject(createCancelledError());
+            if (code === 0) return resolve();
+            reject(new Error(`FFmpeg source trim failed with code ${code}: ${stderr.trim()}`));
+        });
+        proc.on('error', (error) => {
+            if (controller?.trimFfmpegProc === proc) controller.trimFfmpegProc = null;
+            reject(controller?.cancelled ? createCancelledError() : error);
+        });
+    });
 }
 
 async function prepareTrimmedSourceMedia(event, params, tempFiles = [], controller = null) {
@@ -196,33 +159,39 @@ async function prepareTrimmedSourceMedia(event, params, tempFiles = [], controll
     const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'mediaflow-subtitle-trim-'));
     tempFiles.push(tempDir);
     const trimmedOutputPath = path.join(tempDir, 'trimmed_source.mp4');
-    const trimJob = buildSourceTrimJob(params.videoPath, sourceSegments, trimmedOutputPath);
+    const segmentPaths = [];
+    let duration = 0;
 
-    if (controller) {
-        controller.creatorJobId = trimJob.jobId;
+    for (const [index, segment] of sourceSegments.entries()) {
+        const segmentPath = path.join(tempDir, `segment_${index}.mp4`);
+        const segmentDuration = segment.end - segment.start;
+        segmentPaths.push(segmentPath);
+        duration += segmentDuration;
+        await runTrimCommand([
+            '-y', '-i', params.videoPath,
+            '-ss', String(segment.start), '-t', String(segmentDuration),
+            '-map', '0:v:0', '-map', '0:a?',
+            '-c:v', 'libx264', '-preset', 'fast', '-pix_fmt', 'yuv420p',
+            '-c:a', 'aac', '-movflags', '+faststart',
+            segmentPath
+        ], controller);
+        safeSendToRenderer(event, 'subtitle:burn-progress', 2 + Math.round(((index + 1) / sourceSegments.length) * 23));
     }
 
-    const result = await creatorExportRunner.run(trimJob, {
-        onProgress: (payload) => {
-            const progress = Math.max(2, Math.min(30, 2 + Math.round((Number(payload?.progress || 0) / 100) * 28)));
-            safeSendToRenderer(event, 'subtitle:burn-progress', progress);
-        }
-    });
-
-    if (controller) {
-        controller.creatorJobId = null;
-    }
-
-    if (!result?.success) {
-        if (result?.action === 'cancel' || result?.error === 'CANCELLED_BY_USER') {
-            throw createCancelledError();
-        }
-        throw new Error(result?.error || 'Failed to trim source media before subtitle burn');
-    }
+    const concatListPath = path.join(tempDir, 'concat.txt');
+    const concatList = segmentPaths
+        .map((filePath) => `file '${filePath.replace(/\\/g, '/').replace(/'/g, String.raw`'\''`)}'`)
+        .join('\n');
+    await fs.promises.writeFile(concatListPath, concatList, 'utf8');
+    await runTrimCommand([
+        '-y', '-f', 'concat', '-safe', '0', '-i', concatListPath,
+        '-c', 'copy', '-movflags', '+faststart', trimmedOutputPath
+    ], controller);
+    safeSendToRenderer(event, 'subtitle:burn-progress', 30);
 
     return {
         videoPath: trimmedOutputPath,
-        duration: trimJob.timelineDuration,
+        duration,
         usedTrimmedSource: true
     };
 }
@@ -303,6 +272,7 @@ function setupSubtitleHandlers() {
                 cancelled: false,
                 rendererWindow: null,
                 renderFfmpegProc: null,
+                trimFfmpegProc: null,
                 cancelPromise,
                 cancelReject
             };
@@ -550,9 +520,9 @@ function setupSubtitleHandlers() {
                 currentBurnController.cancelReject = null;
             }
             cancelled = true;
-            if (currentBurnController.creatorJobId) {
-                creatorExportRunner.cancelTask(currentBurnController.creatorJobId);
-                currentBurnController.creatorJobId = null;
+            if (currentBurnController.trimFfmpegProc) {
+                currentBurnController.trimFfmpegProc.kill();
+                currentBurnController.trimFfmpegProc = null;
             }
             if (currentBurnController.rendererWindow && !currentBurnController.rendererWindow.isDestroyed()) {
                 currentBurnController.rendererWindow.destroy();

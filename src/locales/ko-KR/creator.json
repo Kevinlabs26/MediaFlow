@@ -572,41 +572,6 @@
       "menuVideo": "비디오 도구",
       "menuAudio": "오디오 / AI"
     },
-    "timeline": {
-      "title": "타임라인",
-      "trackV1": "V1 메인 비디오",
-      "trackA1": "A1 원본 오디오",
-      "trackA2": "A2 배경 음악",
-      "trackA3": "A3 환경 효과음",
-      "trackVideo": "비디오 트랙 {num}",
-      "trackAudio": "오디오 트랙 {num}",
-      "dropHint": "여기에 배경 음악 드래그 앤 드롭",
-      "split": "분할 (S)",
-      "delete": "삭제 (Del)",
-      "volume": "선택한 클립 볼륨 조절",
-      "addText": "현재 위치에 텍스트 추가 (T)",
-      "snap": "자석 흡착 (N)",
-      "menuSplit": "여기서 분할",
-      "menuDelete": "클립 삭제",
-      "menuUnlink": "오디오-비디오 링크 해제",
-      "menuRelink": "재링크",
-      "menuSeparateAudio": "오디오 분리",
-      "menuAddTrackV": "비디오 트랙 추가",
-      "menuAddTrackA": "오디오 트랙 추가",
-      "menuRemoveTrack": "이 트랙 삭제",
-      "mainTrackLocked": "메인 트랙은 삭제할 수 없습니다",
-      "selectionActive": "선택 도구가 활성화되었습니다",
-      "unlinkDone": "오디오-비디오 링크를 해제했습니다",
-      "linkSuccess": "{count}개 클립의 링크를 생성했습니다",
-      "linkNoTarget": "맞출 수 있는 클립을 찾지 못했습니다",
-      "snapOn": "자석 기능을 켰습니다",
-      "snapOff": "자석 기능을 껐습니다",
-      "waveformFail": "오디오 파형 생성을 실패했습니다",
-      "menuToStart": "시작으로 이동 (00:00 정렬)",
-      "moveStartToast": "트랙 맨 앞으로 이동했습니다",
-      "zoomToFitDone": "프로젝트 전체 보기에 맞게 타임라인 확대/축소됨",
-      "zoomFit": "화면에 맞게 확대/축소"
-    },
     "menu": {
       "speed05": "0.5x (느림)",
       "speed15": "1.5x (빠름)",
@@ -765,17 +730,6 @@
       "statusCalculatingMetadata": "메타데이터 로드 중...",
       "audioOnlyMode": "오디오 편집 모드",
       "mergeFail": "병합 실패"
-    },
-    "exportTopBtn": "내보내기",
-    "export": {
-      "title": "내보내기 설정",
-      "format": "내보내기 형식",
-      "type": "콘텐츠 유형",
-      "typeVideoAudio": "비디오 + 오디오",
-      "typeVideoOnly": "비디오 전용 (음소거)",
-      "typeAudioOnly": "오디오 전용 (MP3 추출)",
-      "path": "저장 경로",
-      "startBtn": "내보내기 시작"
     }
   }
 }

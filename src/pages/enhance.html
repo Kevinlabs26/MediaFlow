@@ -260,15 +260,18 @@
             <div class="list-header" id="btn-toggle-file-list" data-i18n-title="enhance.toggleListTooltip" style="cursor: pointer;">
                 <h4>
                     <i class="fas fa-chevron-down toggle-icon"></i>
-                    <span data-i18n="enhance.fileListTitle">📄 待处理文件</span>
+                    <i class="fas fa-file" aria-hidden="true"></i>
+                    <span class="page-title-sr-only" data-i18n="enhance.fileListTitle">待处理文件</span>
                     <span id="enhance-file-count">(0)</span>
                 </h4>
                 <div class="list-actions">
                     <button class="btn-text-link sm" id="btn-enhance-clear-finished" data-i18n-title="enhance.clearFinishedTooltip">
-                        <i class="fas fa-broom"></i> <span data-i18n="enhance.clearFinished">清除已完成</span>
+                        <i class="fas fa-broom" aria-hidden="true"></i>
+                        <span class="page-title-sr-only" data-i18n="enhance.clearFinished">清除已完成</span>
                     </button>
                     <button class="btn-text-link sm danger" id="btn-enhance-clear-all" data-i18n-title="enhance.clearAllTooltip">
-                        <i class="fas fa-trash-alt"></i> <span data-i18n="enhance.clearAll">清除全部</span>
+                        <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                        <span class="page-title-sr-only" data-i18n="enhance.clearAll">清除全部</span>
                     </button>
                 </div>
             </div>

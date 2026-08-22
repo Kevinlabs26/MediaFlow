@@ -159,7 +159,6 @@
     "loadingFeature": {
       "generic": "加载中…",
       "enhance": "正在加载 AI 增强…",
-      "editor": "正在加载剪辑…",
       "subtitle": "正在加载字幕工作台…",
       "creator": "正在加载 Creator 工具…"
     }
