@@ -166,8 +166,8 @@ class Onboarding {
                 <div class="onboarding-dots">${dots}</div>
                 <div class="onboarding-actions">
                     ${step.primaryAction === 'settings'
-                        ? `<button type="button" class="btn btn-secondary" id="onboarding-settings">${this._esc(this._t('common.openSettings', 'Open Settings'))}</button>`
-                        : ''}
+        ? `<button type="button" class="btn btn-secondary" id="onboarding-settings">${this._esc(this._t('common.openSettings', 'Open Settings'))}</button>`
+        : ''}
                     <button type="button" class="btn btn-primary onboarding-next" id="onboarding-next">${this._esc(nextLabel)}</button>
                 </div>
             </div>

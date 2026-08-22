@@ -171,8 +171,8 @@ class VideoInfoUIManager {
                 duration >= total
                     ? window.i18n?.t('download.fullLength') || 'Full length'
                     : window.i18n?.t('download.clipDuration', {
-                          duration: this.manager.service.formatDuration(duration)
-                      }) || `Clip: ${this.manager.service.formatDuration(duration)}`;
+                        duration: this.manager.service.formatDuration(duration)
+                    }) || `Clip: ${this.manager.service.formatDuration(duration)}`;
             e.trimDurationLabel.style.color = duration >= total ? 'var(--text-muted)' : 'var(--accent-primary)';
         }
     }

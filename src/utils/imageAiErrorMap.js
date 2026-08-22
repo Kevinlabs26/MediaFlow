@@ -3,14 +3,14 @@
  * Works in renderer (script tag) and Node (require).
  */
 (function (root, factory) {
-    const api = factory();
+    const api = factory(root);
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = api;
     }
     if (root) {
         root.ImageAiErrorMap = api;
     }
-})(typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : this, function () {
+})(typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : this, function (root) {
     function rawOf(err) {
         if (err == null) return '';
         if (typeof err === 'string') return err;

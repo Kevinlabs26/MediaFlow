@@ -71,24 +71,24 @@ const setupImageHandlers = (ipcMain) => {
                     console.warn('[ImageHandler] AI upscale requested but EnhanceService is not available; using original image.');
                 } else {
                 // 通知前端开始 AI 处理
-                event.sender.send('compress:progress-stage', { stage: 'enhancing', inputPath });
+                    event.sender.send('compress:progress-stage', { stage: 'enhancing', inputPath });
 
-                const enhanceResult = await enhanceService.enhanceImage(
-                    inputPath,
-                    null, // 使用临时路径
-                    buildUpscaleOptions(options),
-                    (progress) => {
+                    const enhanceResult = await enhanceService.enhanceImage(
+                        inputPath,
+                        null, // 使用临时路径
+                        buildUpscaleOptions(options),
+                        (progress) => {
                         // AI 增强进度
-                        console.log(`[ImageHandler] Enhancing: ${progress}%`);
-                    }
-                );
+                            console.log(`[ImageHandler] Enhancing: ${progress}%`);
+                        }
+                    );
 
-                if (enhanceResult.success) {
-                    processInputPath = enhanceResult.outputPath;
-                    tempEnhancedPath = enhanceResult.outputPath;
-                } else {
-                    console.error('[ImageHandler] AI Enhance failed, falling back to original:', enhanceResult.error);
-                }
+                    if (enhanceResult.success) {
+                        processInputPath = enhanceResult.outputPath;
+                        tempEnhancedPath = enhanceResult.outputPath;
+                    } else {
+                        console.error('[ImageHandler] AI Enhance failed, falling back to original:', enhanceResult.error);
+                    }
                 }
             } catch (error) {
                 console.error('[ImageHandler] AI Enhance exception:', error);

@@ -15,7 +15,7 @@ function escapeConcatPath(filePath) {
     return String(filePath || '')
         .replace(/[\r\n]+/g, '')
         .replace(/\\/g, '/')
-        .replace(/'/g, "'\\''");
+        .replace(/'/g, '\'\\\'\'');
 }
 
 function makeEven(value) {

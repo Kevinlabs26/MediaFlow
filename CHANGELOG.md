@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.4] - 2026-08-18
+
+### Changed
+- **Editor (multi-track timeline) removed** in favor of the Creator quick-tools workflow. Legacy Editor source, timeline renderer, export planner, project store, and their tests were deleted; Creator now covers one-shot and batch video tools in a single page.
+- Removed legacy timeline support files (`timeline.min.js`, `wavesurfer.min.js`, `regions.min.js`, `editor.css`, `creator_timeline_layout.css`, `video_transitions.css`) and their integration code.
+- Creator page consolidated: quick and batch tools kept, legacy timeline workspace dropped; subtitle integration code (overlay, lanes, cut actions, project adapter) removed.
+- Locale packs: `editor.json` removed from all 10 languages; `creator.json` / `nav.json` / `common.json` re-synced.
+- Added tests for the reworked download action handler, Creator page template, FFmpeg runner, compress handler, and error utils.
+- Health endpoint version aligned to `2.4.4`; app version continues to read from `package.json` via `app:getVersion`.
+
+### Removed
+- `EditorFlow`, `EditorProjectStore`, `EditorExportManager`, `EditorMediaImporter`, `EditorPreviewManager`, `EditorTimeline*` (manager/actions/drag/drop/selection/snap/trim/viewport/zoom), `EditorUIManager`.
+- `Timeline*` modules, `CreatorTimelineManager`, `CreatorExportManager`, `TimelineAudioMixer`, `CreatorExportPlanner`, `TimelineProjectSnapshot`, `CreatorWorkflowImporter`, and related integration modules.
+
 ## [2.4.0] - 2026-08-14
 
 ### Changed — MediaFlow is now completely free and open source (GPLv3)

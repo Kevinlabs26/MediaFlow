@@ -81,21 +81,21 @@ class EnhanceService {
         const isMac = process.platform === 'darwin';
         const downloadUrls = isMac
             ? {
-                  gfpgan:
+                gfpgan:
                       'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-macos.zip',
-                  esrgan:
+                esrgan:
                       'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-macos.zip',
-                  cugan:
+                cugan:
                       'https://github.com/nihui/realcugan-ncnn-vulkan/releases/download/20220728/realcugan-ncnn-vulkan-20220728-macos.zip'
-              }
+            }
             : {
-                  gfpgan:
+                gfpgan:
                       'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-windows.zip',
-                  esrgan:
+                esrgan:
                       'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-windows.zip',
-                  cugan:
+                cugan:
                       'https://github.com/nihui/realcugan-ncnn-vulkan/releases/download/20220728/realcugan-ncnn-vulkan-20220728-windows.zip'
-              };
+            };
         info.downloadUrl = downloadUrls[engineId] || '';
 
         return info;

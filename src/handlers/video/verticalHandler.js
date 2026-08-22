@@ -59,7 +59,7 @@ function buildVerticalFilterComplex(options = {}) {
         bg =
             `color=c=${color1}:s=1080x1920[c1];` +
             `color=c=${color2}:s=1080x1920[c2];` +
-            `[c1][c2]blend=all_expr='A*(1-Y/H)+B*(Y/H)'[bg]`;
+            '[c1][c2]blend=all_expr=\'A*(1-Y/H)+B*(Y/H)\'[bg]';
     } else {
         // color / black / unknown → solid color
         const solid = style === 'black' ? '0x000000' : color1;
@@ -68,15 +68,15 @@ function buildVerticalFilterComplex(options = {}) {
 
     // Fit into 9:16 then apply user scale
     const fg =
-        `[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,` +
+        '[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,' +
         `scale=iw*${sx}:ih*${sy}[fg]`;
 
     // Center + percentage offsets of canvas size
     const overlay =
-        `[bg][fg]overlay=` +
+        '[bg][fg]overlay=' +
         `x='(W-w)/2+W*${ox}/100':` +
         `y='(H-h)/2+H*${oy}/100':` +
-        `shortest=1[out]`;
+        'shortest=1[out]';
 
     return `${bg};${fg};${overlay}`;
 }

@@ -115,12 +115,12 @@ class HistoryUI {
 
                 const emptyState = new window.EmptyState({
                     // History-appropriate glyph (clock), optically centered in the icon tile
-                    icon: `<span class="empty-state-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg></span>`,
+                    icon: '<span class="empty-state-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg></span>',
                     title: window.i18n?.t('history.emptyTitle') || 'No history yet',
                     desc: window.i18n?.t('history.emptyDesc') || 'Captured media will show up here for quick review and management.',
                     action: {
                         text: window.i18n?.t('history.goDownload') || 'Capture your first video',
-                        icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+                        icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
                         onClick: () => {
                             const btn = document.querySelector('[data-page="download"]');
                             if (btn) btn.click();
@@ -144,12 +144,12 @@ class HistoryUI {
                 noResults.classList.remove('hidden');
 
                 const emptyState = new window.EmptyState({
-                    icon: `<span class="empty-state-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg></span>`,
+                    icon: '<span class="empty-state-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg></span>',
                     title: window.i18n?.t('history.noResultsTitle') || 'No matching records',
                     desc: window.i18n?.t('history.noResultsDesc') || 'Try another keyword or clear filters.',
                     action: {
                         text: window.i18n?.t('history.clearSearchBtn') || 'Clear search',
-                        icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>`,
+                        icon: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>',
                         onClick: () => {
                             if (document.getElementById('btn-clear-search')) {
                                 document.getElementById('btn-clear-search').click();

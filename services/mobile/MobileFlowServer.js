@@ -267,7 +267,7 @@ class MobileFlowServer {
         });
 
         // 健康检查
-        this.app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '2.4.0' }));
+        this.app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '2.4.4' }));
     }
 
     /**

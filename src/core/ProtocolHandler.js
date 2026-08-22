@@ -52,7 +52,7 @@ if (typeof window !== 'undefined') {
                         ? (window.i18n?.t('download.receivedSilent') || 'Background download started')
                         : (window.i18n?.t('download.receivedFromExtension') || 'Received from extension');
                     this.app.showToast?.(msg, 'info');
-                } catch (_) {}
+                } catch (_) { /* ignore */ }
 
                 // 导航到下载页面（静默时也不跳页抢焦点，只在当前已是下载页时更新）
                 try {

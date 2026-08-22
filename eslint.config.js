@@ -26,9 +26,9 @@ module.exports = [
             "indent": ["error", 4],
             "quotes": ["error", "single"],
             "semi": ["error", "always"],
-            "no-unused-vars": "warn",
+            "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
             "no-console": "off",
-            "eqeqeq": "error"
+            "eqeqeq": ["error", "smart"]
         }
     }
 ];
