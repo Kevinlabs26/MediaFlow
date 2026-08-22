@@ -45,7 +45,8 @@ class DownloadFlow {
         // 清除旧监听器（防止 init 被多次调用时叠加注册）
         this._progressCleanup?.();
         this._progressCleanup = window.mediaflow.video.onProgress((data) => {
-            if (this.isDownloading) {
+            // 只响应当前单任务下载的进度，避免队列/播放列表并行任务串线污染进度条
+            if (this.isDownloading && (!this.currentDownloadId || String(data.id) === String(this.currentDownloadId))) {
                 this.ui.updateProgress(data, this.speedMonitor);
             }
         });

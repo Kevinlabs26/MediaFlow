@@ -137,12 +137,17 @@ class DownloadExecutor {
 
         this.manager.isDownloading = true;
         this.manager.currentPlaylistIndex = -1;
+        this.manager.currentPlaylistDownloadId = null;
 
         this.ui.showProgressUI(false);
         this.ui.updateOverallPlaylistProgress(0, total);
 
         const cleanupProgress = window.mediaflow.video.onProgress((data) => {
-            if (this.manager.isDownloading && this.manager.currentPlaylistIndex >= 0) {
+            // 只更新当前播放列表条目的进度，避免并行队列任务串线污染
+            if (this.manager.isDownloading
+                && this.manager.currentPlaylistIndex >= 0
+                && (!this.manager.currentPlaylistDownloadId
+                    || String(data.id) === String(this.manager.currentPlaylistDownloadId))) {
                 const percent = Math.round(data.progress || 0);
                 this.ui.updateCardProgress(this.manager.currentPlaylistIndex, percent);
             }
@@ -156,6 +161,10 @@ class DownloadExecutor {
                 if (!item?.url && !item?.id) continue;
 
                 this.manager.currentPlaylistIndex = index;
+                this.manager.currentPlaylistDownloadId =
+                    (typeof crypto !== 'undefined' && crypto.randomUUID)
+                        ? crypto.randomUUID()
+                        : (Date.now().toString(36) + Math.random().toString(36).slice(2));
                 this.ui.setCardStatus(index, 'downloading');
 
                 try {
@@ -174,6 +183,7 @@ class DownloadExecutor {
                     }
 
                     const result = await this.service.startDownload({
+                        id: this.manager.currentPlaylistDownloadId,
                         url: videoUrl,
                         quality: this.manager.playlistQuality,
                         audioOnly: this.manager.playlistFormat === 'audio',
@@ -211,6 +221,7 @@ class DownloadExecutor {
             cleanupProgress?.();
             this.manager.isDownloading = false;
             this.manager.currentPlaylistIndex = -1;
+            this.manager.currentPlaylistDownloadId = null;
         }
     }
 }
