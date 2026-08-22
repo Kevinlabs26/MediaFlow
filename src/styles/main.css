@@ -2781,6 +2781,168 @@ html[data-theme="light"] .model-btn-primary {
     }
 }
 
+/* 🆕 科技感 HUD 网格层 */
+.hero-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(77, 130, 201, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(77, 130, 201, 0.06) 1px, transparent 1px);
+    background-size: 42px 42px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 0%, transparent 100%);
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 0%, transparent 100%);
+    opacity: 0;
+    animation: heroGridFadeIn 1s ease-out forwards;
+    animation-delay: 0.15s;
+}
+
+@keyframes heroGridFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* 🆕 浮动粒子 */
+.hero-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.hero-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(120, 170, 235, 0.9);
+    box-shadow: 0 0 8px 2px rgba(77, 130, 201, 0.4);
+    opacity: 0;
+    animation: heroParticleFloat linear infinite;
+}
+
+.hero-particle.p1 {
+    top: 24%;
+    left: 12%;
+    animation-duration: 9s;
+    animation-delay: 0.4s;
+}
+
+.hero-particle.p2 {
+    top: 62%;
+    left: 78%;
+    width: 3px;
+    height: 3px;
+    animation-duration: 11s;
+    animation-delay: 1s;
+}
+
+.hero-particle.p3 {
+    top: 15%;
+    right: 20%;
+    width: 5px;
+    height: 5px;
+    animation-duration: 13s;
+    animation-delay: 1.8s;
+}
+
+@keyframes heroParticleFloat {
+    0% {
+        opacity: 0;
+        transform: translateY(30px) translateX(0) scale(0.6);
+    }
+
+    20% {
+        opacity: 0.7;
+    }
+
+    50% {
+        transform: translateY(-10px) translateX(14px) scale(1);
+    }
+
+    80% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-60px) translateX(-8px) scale(0.8);
+    }
+}
+
+/* 🆕 分层入场动画 */
+.hero-section .hero-icon,
+.hero-section .hero-title,
+.hero-section .hero-subtitle,
+.hero-section .hero-input-wrapper,
+.hero-section .hero-quick-actions {
+    opacity: 0;
+    animation: heroFadeUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.hero-section .hero-icon {
+    animation-delay: 0.05s;
+}
+
+.hero-section .hero-title {
+    animation-delay: 0.18s;
+}
+
+.hero-section .hero-subtitle {
+    animation-delay: 0.3s;
+}
+
+.hero-section .hero-input-wrapper {
+    animation-delay: 0.42s;
+}
+
+.hero-section .hero-quick-actions {
+    animation-delay: 0.56s;
+}
+
+@keyframes heroFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 尊重系统"减少动态"偏好 */
+@media (prefers-reduced-motion: reduce) {
+    .hero-section .hero-icon,
+    .hero-section .hero-title,
+    .hero-section .hero-subtitle,
+    .hero-section .hero-input-wrapper,
+    .hero-section .hero-quick-actions {
+        opacity: 1;
+        animation: none;
+    }
+
+    .hero-grid {
+        opacity: 1;
+        animation: none;
+    }
+
+    .hero-particle {
+        display: none;
+    }
+}
+
+/* 紧凑模式：隐藏动画层，避免入场动画残留 */
+.hero-section.compact .hero-grid,
+.hero-section.compact .hero-particles {
+    display: none;
+}
+
 .hero-content {
     position: relative;
     z-index: 1;
@@ -2841,6 +3003,12 @@ html[data-theme="light"] .model-btn-primary {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
     display: flex;
     gap: 8px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hero-input-group:focus-within {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(77, 130, 201, 0.15), 0 4px 24px rgba(77, 130, 201, 0.18);
 }
 
 .hero-input {
