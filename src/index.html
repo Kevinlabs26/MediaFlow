@@ -307,43 +307,13 @@
     <script src="utils/prodConsole.js"></script>
     <script src="core/featureLoader.js"></script>
     <script src="core/i18n.js"></script>
-    <script src="utils/errorUtils.js"></script>
+<script src="utils/errorUtils.js"></script>
     <script src="components/common/speedMonitor.js"></script>
-    <script src="features/scribe/ScribeService.js"></script>
-    <script src="features/scribe/ScribeModelManager.js"></script>
-    <script src="features/scribe/ScribeClipHandler.js"></script>
-    <script src="features/scribe/ScribeSpeakerManager.js"></script>
-    <script src="features/scribe/ScribeUIManager.js"></script>
-    <script src="features/scribe/ScribeExporter.js"></script>
-    <script src="features/scribe/ScribeTranslator.js"></script>
-    <script src="features/scribe/ScribeAIHandler.js"></script>
-    <script src="features/scribe/ScribeQueueManager.js"></script>
-    <script src="features/scribe/ScribeSettingsManager.js"></script>
-    <script src="features/scribe/ScribeTranscriber.js"></script>
-    <script src="features/scribe/ScribeEventManager.js"></script>
-    <script src="features/scribe/ScribeMediaPlayer.js"></script>
-    <script src="features/scribe/ScribeSearchReplace.js"></script>
-    <script src="features/scribe/ScribeFlow.js"></script>
-    <script src="utils/imageAiErrorMap.js"></script>
-    <script src="features/image/PixelService.js?v=1.3.16"></script>
-    <script src="features/image/PixelFileManager.js?v=1.3.16"></script>
-    <script src="features/image/PixelListRenderer.js?v=1.3.16"></script>
-    <script src="features/image/PixelPreviewManager.js?v=1.3.17"></script>
-    <script src="features/image/PixelAIMediator.js"></script>
-    <script src="features/image/PixelCompareManager.js"></script>
-    <script src="features/image/PixelPresetUI.js?v=1.3.17"></script>
-    <script src="features/image/PixelWatermarkUI.js?v=1.3.17"></script>
-    <script src="features/image/PixelUIEvents.js?v=1.3.17"></script>
-    <script src="features/image/PixelPresetManager.js?v=1.3.16"></script>
-    <script src="features/image/PixelResizer.js"></script>
-    <script src="features/image/PixelUIManager.js?v=1.3.17"></script>
-    <script src="features/image/PixelFlow.js?v=1.3.17"></script>
+    <!-- Scribe (transcription): lazy-loaded via FeatureLoader.ensureScribe() -->
+    <!-- Pixel (image tools): lazy-loaded via FeatureLoader.ensurePixel() -->
+    <!-- Mobile (phone connect): lazy-loaded via FeatureLoader.ensureMobile() -->
     <script src="features/subtitle/shared/SubtitleDisplayMode.js"></script>
-    <!-- Creator toolbox scripts: lazy-loaded via FeatureLoader.ensureCreator() -->
-    <script src="features/mobile/MobileFlowService.js"></script>
-    <script src="features/mobile/MobileFlowUIManager.js"></script>
-    <script src="features/mobile/MobileFlow.js"></script>
-    <!-- Shared translation (download/scribe/subtitle) — keep on cold start -->
+    <!-- Shared translation (download/subtitle) — keep on cold start -->
     <script src="features/common/TranslationService.js"></script>
     <!-- Subtitle scripts: lazy-loaded via FeatureLoader.ensureSubtitle() -->
     <script src="features/download/DownloadService.js"></script>

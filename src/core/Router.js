@@ -116,6 +116,60 @@ class Router {
             }
         }
 
+        if (pageId === 'transcribe') {
+            try {
+                const flow = window.FeatureLoader?.ensureScribe
+                    ? await window.FeatureLoader.ensureScribe(this.app)
+                    : window.scribeFlow;
+                if (flow && !flow._featureLoaderInited && typeof flow.init === 'function') {
+                    await flow.init();
+                    flow._featureLoaderInited = true;
+                }
+            } catch (scribeErr) {
+                console.error('[Router] Failed to load Scribe feature:', scribeErr);
+                this.app?.showToast?.(
+                    window.i18n?.t?.('common.loadFailed') || 'Failed to load Scribe tools',
+                    'error'
+                );
+            }
+        }
+
+        if (pageId === 'compress') {
+            try {
+                const flow = window.FeatureLoader?.ensurePixel
+                    ? await window.FeatureLoader.ensurePixel(this.app)
+                    : window.pixelFlow;
+                if (flow && !flow._featureLoaderInited && typeof flow.init === 'function') {
+                    await flow.init();
+                    flow._featureLoaderInited = true;
+                }
+            } catch (pixelErr) {
+                console.error('[Router] Failed to load Pixel feature:', pixelErr);
+                this.app?.showToast?.(
+                    window.i18n?.t?.('common.loadFailed') || 'Failed to load Image tools',
+                    'error'
+                );
+            }
+        }
+
+        if (pageId === 'mobile') {
+            try {
+                const flow = window.FeatureLoader?.ensureMobile
+                    ? await window.FeatureLoader.ensureMobile(this.app)
+                    : window.mobileFlow;
+                if (flow && !flow._featureLoaderInited && typeof flow.init === 'function') {
+                    await flow.init();
+                    flow._featureLoaderInited = true;
+                }
+            } catch (mobileErr) {
+                console.error('[Router] Failed to load Mobile feature:', mobileErr);
+                this.app?.showToast?.(
+                    window.i18n?.t?.('common.loadFailed') || 'Failed to load Mobile connect',
+                    'error'
+                );
+            }
+        }
+
     }
 
     /**
@@ -202,10 +256,13 @@ class Router {
             if (paths.length) {
                 setTimeout(async () => {
                     try {
-                        if (window.pixelFlow?.importPaths) {
-                            await window.pixelFlow.importPaths(paths);
-                        } else if (window.pixelFlow?.addFiles) {
-                            window.pixelFlow.addFiles(paths.map((p) => ({
+                        const flow = window.FeatureLoader?.ensurePixel
+                            ? await window.FeatureLoader.ensurePixel(this.app)
+                            : window.pixelFlow;
+                        if (flow?.importPaths) {
+                            await flow.importPaths(paths);
+                        } else if (flow?.addFiles) {
+                            flow.addFiles(paths.map((p) => ({
                                 path: p,
                                 name: String(p).split(/[/\\]/).pop(),
                                 size: 0

@@ -32,20 +32,28 @@ class DownloadActionHandler {
         }
     }
 
-    sendToTranscribe() {
+    async sendToTranscribe() {
         console.log('[DownloadActionHandler] sendToTranscribe called');
-        if (this.manager.lastDownloadedFilePath && window.scribeFlow) {
-            this.app.switchPage('transcribe');
-            // 延遲確保頁面資源加載及初始化完成
-            setTimeout(() => {
-                const fileName = this.manager.lastDownloadedFilePath.split(/[\\/]/).pop();
-                window.scribeFlow.handleFilesSelect([{ 
-                    path: this.manager.lastDownloadedFilePath,
-                    name: fileName,
-                    type: 'video/mp4', // 默認類型以通過 ScribeQueueManager 過濾
-                    size: 0 // 佔位大小
-                }]);
-            }, 100);
+        if (this.manager.lastDownloadedFilePath) {
+            await this.app.switchPage('transcribe');
+            try {
+                const flow = window.FeatureLoader?.ensureScribe
+                    ? await window.FeatureLoader.ensureScribe(this.app)
+                    : window.scribeFlow;
+                // 延遲確保頁面資源加載及初始化完成
+                setTimeout(() => {
+                    const fileName = this.manager.lastDownloadedFilePath.split(/[\\/]/).pop();
+                    flow?.handleFilesSelect?.([{
+                        path: this.manager.lastDownloadedFilePath,
+                        name: fileName,
+                        type: 'video/mp4', // 默認類型以通過 ScribeQueueManager 過濾
+                        size: 0 // 佔位大小
+                    }]);
+                }, 100);
+            } catch (error) {
+                console.error('[DownloadActionHandler] sendToTranscribe failed:', error);
+                this.app.showToast(window.i18n?.t?.('common.loadFailed') || 'Failed to open Scribe tools', 'error');
+            }
         } else {
             this.app.showToast(window.i18n?.t('download.fileNavNotFound') || 'Cannot find file navigation', 'warning');
         }

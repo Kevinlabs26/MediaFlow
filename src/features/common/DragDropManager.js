@@ -184,13 +184,20 @@ class DragDropManager {
 
             // Audio -> Transcribe
             if (this._isAudioFile(firstFile)) {
-                this.app.switchPage('transcribe');
-                // Assuming Transcribe page has a global handler or we dispatch custom event
-                if (window.scribeFlow) {
-                    window.scribeFlow.handleFilesSelect([firstFile]); // usually single file for now
-                    this.app.showToast(window.i18n?.t('nav.toScribe') || 'Navigated to Audio Transcription', 'info');
-                } else {
-                    this.app.showToast('ScribeFlow module not loaded', 'error');
+                await this.app.switchPage('transcribe');
+                try {
+                    const flow = window.FeatureLoader?.ensureScribe
+                        ? await window.FeatureLoader.ensureScribe(this.app)
+                        : window.scribeFlow;
+                    if (flow?.handleFilesSelect) {
+                        flow.handleFilesSelect([firstFile]); // usually single file for now
+                        this.app.showToast(window.i18n?.t('nav.toScribe') || 'Navigated to Audio Transcription', 'info');
+                    } else {
+                        this.app.showToast('ScribeFlow module not loaded', 'error');
+                    }
+                } catch (e) {
+                    console.error('[DragDrop] ensureScribe failed:', e);
+                    this.app.showToast(window.i18n?.t?.('common.loadFailed') || 'Failed to load Scribe tools', 'error');
                 }
                 return;
             }
@@ -216,13 +223,21 @@ class DragDropManager {
      * 处理图片文件
      */
     async handleImageFiles(files) {
-        this.app.switchPage('compress');
-        if (window.pixelFlow) {
-            // Ensure files is an Array, as FileList doesn't have .filter()
-            const fileArray = Array.isArray(files) ? files : Array.from(files);
-            window.pixelFlow.handleFilesSelect(fileArray);
-        } else {
-            this.app.showToast('PixelFlow module not loaded', 'error');
+        await this.app.switchPage('compress');
+        // Ensure files is an Array, as FileList doesn't have .filter()
+        const fileArray = Array.isArray(files) ? files : Array.from(files);
+        try {
+            const flow = window.FeatureLoader?.ensurePixel
+                ? await window.FeatureLoader.ensurePixel(this.app)
+                : window.pixelFlow;
+            if (flow?.handleFilesSelect) {
+                flow.handleFilesSelect(fileArray);
+            } else {
+                this.app.showToast('PixelFlow module not loaded', 'error');
+            }
+        } catch (e) {
+            console.error('[DragDrop] ensurePixel failed:', e);
+            this.app.showToast(window.i18n?.t?.('common.loadFailed') || 'Failed to load Image tools', 'error');
         }
     }
 }

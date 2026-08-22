@@ -864,7 +864,7 @@ describe('Renderer smoke tests', () => {
             // Creator / Subtitle are lazy-loaded; boot leaves them null/undefined
             expect(app.creatorFlow == null).toBe(true);
             expect(app.subtitleFlow == null).toBe(true);
-            expect(app.pixelFlow).toBeUndefined();
+            expect(app.pixelFlow == null).toBe(true);
         } finally {
             window.CreatorFlow = previousCreatorFlow;
             window.SubtitleFlow = previousSubtitleFlow;
@@ -1324,7 +1324,7 @@ describe('Renderer smoke tests', () => {
         }
     });
 
-    it('routes downloaded files into ScribeFlow automatically', () => {
+    it('routes downloaded files into ScribeFlow automatically', async () => {
         jest.useFakeTimers();
         try {
             require('../../src/features/download/DownloadActionHandler');
@@ -1343,11 +1343,15 @@ describe('Renderer smoke tests', () => {
             window.scribeFlow = {
                 handleFilesSelect: jest.fn()
             };
+            window.FeatureLoader = {
+                ensureScribe: jest.fn().mockResolvedValue(window.scribeFlow)
+            };
 
             const handler = new window.DownloadActionHandler(manager);
-            handler.sendToTranscribe();
+            await handler.sendToTranscribe();
 
             expect(app.switchPage).toHaveBeenCalledWith('transcribe');
+            expect(window.FeatureLoader.ensureScribe).toHaveBeenCalledWith(app);
 
             jest.runAllTimers();
 
@@ -1361,6 +1365,7 @@ describe('Renderer smoke tests', () => {
         } finally {
             jest.useRealTimers();
             delete window.scribeFlow;
+            delete window.FeatureLoader;
         }
     });
 

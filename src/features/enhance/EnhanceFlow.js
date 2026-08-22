@@ -236,6 +236,9 @@ class EnhanceFlow {
         try {
             if (window.app?.router?.navigateTo) {
                 await window.app.router.navigateTo('compress', { imagePaths: files });
+            } else if (window.FeatureLoader?.ensurePixel) {
+                const flow = await window.FeatureLoader.ensurePixel(window.app);
+                if (flow?.importPaths) await flow.importPaths(files);
             } else if (window.pixelFlow?.importPaths) {
                 await window.pixelFlow.importPaths(files);
             } else {

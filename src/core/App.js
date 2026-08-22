@@ -25,18 +25,12 @@ class MediaFlowApp {
         window.creatorFlow = null;
         this.subtitleFlow = null;
         window.subtitleFlow = null;
-        if (window.PixelFlow) {
-            this.pixelFlow = new window.PixelFlow(this);
-            window.pixelFlow = this.pixelFlow;
-        }
-        if (window.ScribeFlow) {
-            this.scribeFlow = new window.ScribeFlow(this);
-            window.scribeFlow = this.scribeFlow;
-        }
-        if (window.MobileFlow) {
-            this.mobileFlow = new window.MobileFlow(this);
-            window.mobileFlow = this.mobileFlow;
-        }
+        this.pixelFlow = null;
+        window.pixelFlow = null;
+        this.scribeFlow = null;
+        window.scribeFlow = null;
+        this.mobileFlow = null;
+        window.mobileFlow = null;
 
         // 全局状态
         this.mode = 'single';
@@ -157,11 +151,7 @@ class MediaFlowApp {
             this.historyManager.init();
 
             // 5. 初始化 Feature Flows 
-            // creator / subtitle init deferred to FeatureLoader on first open
-            if (this.pixelFlow) await this.pixelFlow.init?.();
-            // scribeFlow often auto-inits or has complex flow, check scribeFlow.js if needed
-            if (this.scribeFlow) await this.scribeFlow.init?.();
-            if (this.mobileFlow) await this.mobileFlow.init?.();
+            // creator / subtitle / scribe / pixel / mobile init deferred to FeatureLoader on first open
 
             if (window.ShortcutsManager) {
                 this.shortcutsManager = new window.ShortcutsManager(this);
@@ -407,9 +397,17 @@ class MediaFlowApp {
 
     async handleAudioFile(file) {
         this.switchPage('transcribe');
-        if (window.scribeFlow) {
-            window.scribeFlow.handleFilesSelect([file]);
-        } else {
+        try {
+            const flow = window.FeatureLoader?.ensureScribe
+                ? await window.FeatureLoader.ensureScribe(this)
+                : window.scribeFlow;
+            if (flow?.handleFilesSelect) {
+                flow.handleFilesSelect([file]);
+            } else {
+                this.showToast(window.i18n?.t('common.errors.moduleNotLoaded') || 'Notification', 'error');
+            }
+        } catch (err) {
+            console.error('[App] handleAudioFile failed to load Scribe:', err);
             this.showToast(window.i18n?.t('common.errors.moduleNotLoaded') || 'Notification', 'error');
         }
     }

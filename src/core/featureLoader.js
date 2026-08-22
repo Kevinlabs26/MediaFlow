@@ -94,11 +94,55 @@
         'features/video/CreatorFlow.js'
     ]);
 
+    const SCRIBE_SCRIPTS = Object.freeze([
+        'features/scribe/ScribeService.js',
+        'features/scribe/ScribeModelManager.js',
+        'features/scribe/ScribeClipHandler.js',
+        'features/scribe/ScribeSpeakerManager.js',
+        'features/scribe/ScribeUIManager.js',
+        'features/scribe/ScribeExporter.js',
+        'features/scribe/ScribeTranslator.js',
+        'features/scribe/ScribeAIHandler.js',
+        'features/scribe/ScribeQueueManager.js',
+        'features/scribe/ScribeSettingsManager.js',
+        'features/scribe/ScribeTranscriber.js',
+        'features/scribe/ScribeEventManager.js',
+        'features/scribe/ScribeMediaPlayer.js',
+        'features/scribe/ScribeSearchReplace.js',
+        'features/scribe/ScribeFlow.js'
+    ]);
+
+    const PIXEL_SCRIPTS = Object.freeze([
+        'utils/imageAiErrorMap.js',
+        'features/image/PixelService.js?v=1.3.16',
+        'features/image/PixelFileManager.js?v=1.3.16',
+        'features/image/PixelListRenderer.js?v=1.3.16',
+        'features/image/PixelPreviewManager.js?v=1.3.17',
+        'features/image/PixelAIMediator.js',
+        'features/image/PixelCompareManager.js',
+        'features/image/PixelPresetUI.js?v=1.3.17',
+        'features/image/PixelWatermarkUI.js?v=1.3.17',
+        'features/image/PixelUIEvents.js?v=1.3.17',
+        'features/image/PixelPresetManager.js?v=1.3.16',
+        'features/image/PixelResizer.js',
+        'features/image/PixelUIManager.js?v=1.3.17',
+        'features/image/PixelFlow.js?v=1.3.17'
+    ]);
+
+    const MOBILE_SCRIPTS = Object.freeze([
+        'features/mobile/MobileFlowService.js',
+        'features/mobile/MobileFlowUIManager.js',
+        'features/mobile/MobileFlow.js'
+    ]);
+
     /** @type {Promise<*>|null} */
     let enhancePromise = null;
     let subtitlePromise = null;
     /** @type {Promise<*>|null} */
     let creatorPromise = null;
+    let scribePromise = null;
+    let pixelPromise = null;
+    let mobilePromise = null;
 
     let _loadingDepth = 0;
 
@@ -132,7 +176,10 @@
         const labels = {
             enhance: t('common.loadingFeature.enhance', 'Loading AI Enhance…'),
             subtitle: t('common.loadingFeature.subtitle', 'Loading Subtitle studio…'),
-            creator: t('common.loadingFeature.creator', 'Loading Creator tools…')
+            creator: t('common.loadingFeature.creator', 'Loading Creator tools…'),
+            scribe: t('common.loadingFeature.scribe', 'Loading Scribe…'),
+            pixel: t('common.loadingFeature.pixel', 'Loading Image tools…'),
+            mobile: t('common.loadingFeature.mobile', 'Loading Mobile connect…')
         };
         const text = el.querySelector('.feature-loading-text');
         if (text) text.textContent = labels[featureKey] || t('common.loadingFeature.generic', 'Loading…');
@@ -284,12 +331,160 @@
         return creatorPromise;
     }
 
+    /**
+     * Ensure Scribe (transcription) scripts + ScribeFlow are ready (once).
+     * Must run after the transcribe page DOM is injected (constructor touches it).
+     * @param {object} [app]
+     * @returns {Promise<object|null>}
+     */
+    async function ensureScribe(app) {
+        if (root.scribeFlow && typeof root.scribeFlow.init === 'function') {
+            return root.scribeFlow;
+        }
+
+        if (scribePromise) return scribePromise;
+
+        scribePromise = withFeatureLoading('scribe', async () => {
+            const loader = root.ScriptLoader;
+            if (!loader?.loadScripts) {
+                throw new Error('[FeatureLoader] ScriptLoader missing');
+            }
+
+            await loader.loadScripts(SCRIBE_SCRIPTS);
+
+            const ScribeCls = root.ScribeFlow;
+            if (typeof ScribeCls !== 'function') {
+                throw new Error('[FeatureLoader] ScribeFlow not found after script load');
+            }
+
+            const appRef = app || root.app || null;
+            const flow = new ScribeCls(appRef);
+            root.scribeFlow = flow;
+            if (appRef) {
+                appRef.scribeFlow = flow;
+            }
+
+            if (typeof flow.init === 'function' && !flow._featureLoaderInited) {
+                flow.init();
+                flow._featureLoaderInited = true;
+            }
+
+            return flow;
+        }).catch((err) => {
+            scribePromise = null;
+            console.error('[FeatureLoader] ensureScribe failed:', err);
+            throw err;
+        });
+
+        return scribePromise;
+    }
+
+    /**
+     * Ensure Pixel (image tools) scripts + PixelFlow are ready (once).
+     * @param {object} [app]
+     * @returns {Promise<object|null>}
+     */
+    async function ensurePixel(app) {
+        if (root.pixelFlow && typeof root.pixelFlow.init === 'function') {
+            return root.pixelFlow;
+        }
+
+        if (pixelPromise) return pixelPromise;
+
+        pixelPromise = withFeatureLoading('pixel', async () => {
+            const loader = root.ScriptLoader;
+            if (!loader?.loadScripts) {
+                throw new Error('[FeatureLoader] ScriptLoader missing');
+            }
+
+            await loader.loadScripts(PIXEL_SCRIPTS);
+
+            const PixelCls = root.PixelFlow;
+            if (typeof PixelCls !== 'function') {
+                throw new Error('[FeatureLoader] PixelFlow not found after script load');
+            }
+
+            const appRef = app || root.app || null;
+            const flow = new PixelCls(appRef);
+            root.pixelFlow = flow;
+            if (appRef) {
+                appRef.pixelFlow = flow;
+            }
+
+            if (typeof flow.init === 'function' && !flow._featureLoaderInited) {
+                await flow.init();
+                flow._featureLoaderInited = true;
+            }
+
+            return flow;
+        }).catch((err) => {
+            pixelPromise = null;
+            console.error('[FeatureLoader] ensurePixel failed:', err);
+            throw err;
+        });
+
+        return pixelPromise;
+    }
+
+    /**
+     * Ensure Mobile (phone connect) scripts + MobileFlow are ready (once).
+     * @param {object} [app]
+     * @returns {Promise<object|null>}
+     */
+    async function ensureMobile(app) {
+        if (root.mobileFlow && typeof root.mobileFlow.init === 'function') {
+            return root.mobileFlow;
+        }
+
+        if (mobilePromise) return mobilePromise;
+
+        mobilePromise = withFeatureLoading('mobile', async () => {
+            const loader = root.ScriptLoader;
+            if (!loader?.loadScripts) {
+                throw new Error('[FeatureLoader] ScriptLoader missing');
+            }
+
+            await loader.loadScripts(MOBILE_SCRIPTS);
+
+            const MobileCls = root.MobileFlow;
+            if (typeof MobileCls !== 'function') {
+                throw new Error('[FeatureLoader] MobileFlow not found after script load');
+            }
+
+            const appRef = app || root.app || null;
+            const flow = new MobileCls(appRef);
+            root.mobileFlow = flow;
+            if (appRef) {
+                appRef.mobileFlow = flow;
+            }
+
+            if (typeof flow.init === 'function' && !flow._featureLoaderInited) {
+                flow.init();
+                flow._featureLoaderInited = true;
+            }
+
+            return flow;
+        }).catch((err) => {
+            mobilePromise = null;
+            console.error('[FeatureLoader] ensureMobile failed:', err);
+            throw err;
+        });
+
+        return mobilePromise;
+    }
+
     root.FeatureLoader = {
         ENHANCE_SCRIPTS,
         SUBTITLE_SCRIPTS,
         CREATOR_SCRIPTS,
+        SCRIBE_SCRIPTS,
+        PIXEL_SCRIPTS,
+        MOBILE_SCRIPTS,
         ensureEnhance,
         ensureSubtitle,
-        ensureCreator
+        ensureCreator,
+        ensureScribe,
+        ensurePixel,
+        ensureMobile
     };
 })(typeof window !== 'undefined' ? window : globalThis);
