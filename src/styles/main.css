@@ -2723,7 +2723,7 @@ html[data-theme="light"] .model-btn-primary {
 /* ==================== Hero Section ==================== */
 .hero-section {
     position: relative;
-    padding: 40px 32px 32px;
+    padding: 56px 32px 48px;
     margin: -32px -32px 24px -32px;
     background: linear-gradient(135deg,
             rgba(77, 130, 201, 0.15) 0%,
@@ -2732,6 +2732,14 @@ html[data-theme="light"] .model-btn-primary {
     border-bottom: 1px solid var(--border-color);
     overflow: hidden;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hero-section .hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
 }
 
 /* 🆕 紧凑模式：解析视频后收起部分元素 */
@@ -2756,6 +2764,11 @@ html[data-theme="light"] .model-btn-primary {
     margin-bottom: 0;
     border-bottom: none;
     height: 0;
+}
+
+.hero-section.compact .hero-content {
+    min-height: 0;
+    display: none;
 }
 
 .hero-background {
@@ -2956,10 +2969,19 @@ html[data-theme="light"] .model-btn-primary {
 }
 
 .hero-icon {
-    font-size: 48px;
-    display: block;
-    margin-bottom: 12px;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    color: #8eb0de;
     animation: heroIconPulse 2s ease-in-out infinite;
+}
+
+.hero-icon svg {
+    width: 32px;
+    height: 32px;
 }
 
 @keyframes heroIconPulse {
@@ -3029,33 +3051,40 @@ html[data-theme="light"] .model-btn-primary {
 .hero-quick-actions {
     display: flex;
     justify-content: center;
-    gap: 28px;
-    margin-top: 24px;
+    gap: 24px;
+    margin-top: 20px;
 }
 
-/* 显著增大快捷操作按钮 */
+/* 快捷操作按钮：次级样式，弱化视觉层级 */
 .hero-quick-actions .btn-text {
-    background: var(--fill-muted);
-    border: 1px solid var(--fill-hover);
+    background: transparent;
+    border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    padding: 16px 30px;
-    border-radius: var(--radius-lg);
-    font-size: 16px;
-    font-weight: 600;
-    display: flex;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
     align-items: center;
-    gap: 12px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    min-width: 190px;
+    gap: 8px;
+    transition: all 0.25s ease;
+}
+
+.hero-quick-actions .btn-text svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+    transition: opacity 0.25s ease;
 }
 
 .hero-quick-actions .btn-text:hover {
     color: var(--text-primary);
-    background: var(--fill-strong);
-    border-color: var(--accent-primary);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    background: var(--fill-muted);
+}
+
+.hero-quick-actions .btn-text:hover svg {
+    opacity: 1;
 }
 
 /* 功能入口分割线 */
