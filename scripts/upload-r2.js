@@ -19,6 +19,12 @@ const s3Client = new S3Client({
     },
 });
 
+function getContentType(fileName) {
+    if (fileName.endsWith(".yml")) return "text/yaml; charset=utf-8";
+    if (fileName.endsWith(".blockmap")) return "application/json";
+    return "application/octet-stream";
+}
+
 async function uploadFile(filePath) {
     if (!fs.existsSync(filePath)) {
         console.error(`❌ 文件不存在: ${filePath}`);
@@ -39,7 +45,7 @@ async function uploadFile(filePath) {
                 Bucket: R2_CONFIG.bucket,
                 Key: `${R2_CONFIG.downloadPrefix}/${fileName}`,
                 Body: fileStream,
-                ContentType: "application/octet-stream",
+                ContentType: getContentType(fileName),
             },
             queueSize: 4,
             partSize: 1024 * 1024 * 5,
@@ -61,10 +67,31 @@ async function uploadFile(filePath) {
     }
 }
 
+async function uploadWindowsUpdateMetadata(installerPath) {
+    const distPath = path.dirname(installerPath);
+    const installerName = path.basename(installerPath);
+    const metadataFiles = [
+        path.join(distPath, `${installerName}.blockmap`),
+        path.join(distPath, "latest.yml"),
+    ];
+
+    for (const metadataPath of metadataFiles) {
+        if (fs.existsSync(metadataPath)) {
+            await uploadFile(metadataPath);
+        } else {
+            console.warn(`⚠️ 未找到自动更新元数据，跳过: ${metadataPath}`);
+        }
+    }
+}
+
 async function main() {
     // 如果命令行传了参数，直接上传指定文件
     if (process.argv[2]) {
-        await uploadFile(process.argv[2]);
+        const filePath = path.resolve(process.argv[2]);
+        await uploadFile(filePath);
+        if (filePath.toLowerCase().endsWith(".exe")) {
+            await uploadWindowsUpdateMetadata(filePath);
+        }
         return;
     }
 
@@ -109,6 +136,9 @@ async function main() {
 
     for (const file of toUpload) {
         await uploadFile(file.path);
+        if (file.name.endsWith(".exe")) {
+            await uploadWindowsUpdateMetadata(file.path);
+        }
     }
 }
 
