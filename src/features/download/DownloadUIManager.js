@@ -177,7 +177,8 @@ class DownloadUIManager {
 
     renderVideoInfo(info) { this.infoUI.renderVideoInfo(info); }
     updateAudioBitrateUI(info) { this.infoUI.updateAudioBitrateUI(info); }
-    showSkeleton() { this.infoUI.showSkeleton(); }
+    showSkeleton(statusText) { this.infoUI.showSkeleton(statusText); }
+    updateSkeletonStatus(statusText) { this.infoUI.updateSkeletonStatus(statusText); }
     hideSkeleton() { this.infoUI.hideSkeleton(); }
 
     escapeHtml(value) {

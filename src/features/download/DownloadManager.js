@@ -157,10 +157,20 @@ class DownloadFlow {
             }
         } catch { /* already passed isValidUrl, skip */ }
 
-        // 先显示按钮加载状态，骨架屏延迟到 API 成功后再显示
-        this.ui.showSkeleton?.();
+        const checkingText = window.i18n?.t('download.checking') || 'Analyzing…';
+        const checkStartedAt = Date.now();
+        const updateCheckStatus = () => {
+            const elapsedSeconds = Math.floor((Date.now() - checkStartedAt) / 1000);
+            const statusText = `${checkingText} ${elapsedSeconds}s`;
+            this.ui.updateSkeletonStatus?.(statusText);
+            const buttonStatus = this.ui.elements.btnCheck.querySelector?.('[data-check-status]');
+            if (buttonStatus) buttonStatus.textContent = statusText;
+        };
+
+        this.ui.showSkeleton?.(`${checkingText} 0s`);
         this.ui.elements.btnCheck.disabled = true;
-        this.ui.elements.btnCheck.innerHTML = `<span class="loading-spinner"></span> <span>${window.i18n?.t('download.checking')}</span>`;
+        this.ui.elements.btnCheck.innerHTML = `<span class="loading-spinner"></span> <span data-check-status>${checkingText} 0s</span>`;
+        const checkStatusTimer = setInterval(updateCheckStatus, 1000);
 
         try {
             // Check for Playlist / bulk channel pages
@@ -260,6 +270,7 @@ class DownloadFlow {
             // 🆕 显示持久化错误卡片，而不是彻底隐藏 UI
             this.ui.showErrorState(userMessage);
         } finally {
+            clearInterval(checkStatusTimer);
             if (this.isCurrentCheck(checkToken)) {
                 this.ui.elements.btnCheck.disabled = false;
                 // 使用 innerHTML 恢复图标和翻译

@@ -1,5 +1,37 @@
 /** @jest-environment jsdom */
 
+describe('VideoInfoUIManager analysis status', () => {
+    beforeEach(() => {
+        jest.resetModules();
+        require('../../../src/features/download/VideoInfoUIManager.js');
+    });
+
+    afterEach(() => {
+        delete window.VideoInfoUIManager;
+        document.body.innerHTML = '';
+    });
+
+    test('shows elapsed analysis text inside the loading skeleton', () => {
+        document.body.innerHTML = `
+            <div id="download-video-info" class="hidden"></div>
+            <div id="download-options"></div>
+        `;
+        const ui = {
+            elements: {
+                videoInfo: document.getElementById('download-video-info'),
+                downloadOptions: document.getElementById('download-options')
+            }
+        };
+        const infoUI = new window.VideoInfoUIManager(ui);
+
+        infoUI.showSkeleton('正在解析… 0s');
+        infoUI.updateSkeletonStatus('正在解析… 8s');
+
+        expect(ui.elements.videoInfo.querySelector('.video-info-skeleton-status').textContent)
+            .toBe('正在解析… 8s');
+    });
+});
+
 describe('DownloadProgressUI single-download controls', () => {
     beforeEach(() => {
         jest.resetModules();

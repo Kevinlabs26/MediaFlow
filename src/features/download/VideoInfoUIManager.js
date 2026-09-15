@@ -8,7 +8,7 @@ class VideoInfoUIManager {
         this.manager = ui.manager;
     }
 
-    showSkeleton() {
+    showSkeleton(statusText = '') {
         const infoDiv = this.ui.elements.videoInfo;
         if (!infoDiv) return;
 
@@ -26,12 +26,19 @@ class VideoInfoUIManager {
                     <div class="skeleton skeleton-text short" style="height:24px; margin-bottom:12px;"></div>
                     <div class="skeleton skeleton-text long"></div>
                     <div class="skeleton skeleton-text short" style="width:30%;"></div>
+                    <div class="video-info-skeleton-status" style="margin-top:14px; color:var(--text-secondary); font-size:13px;"></div>
                 </div>
             `;
             infoDiv.style.position = 'relative';
             infoDiv.appendChild(overlay);
         }
         overlay.classList.remove('hidden');
+        this.updateSkeletonStatus(statusText);
+    }
+
+    updateSkeletonStatus(statusText) {
+        const status = this.ui.elements.videoInfo?.querySelector('.video-info-skeleton-status');
+        if (status) status.textContent = statusText || '';
     }
 
     hideSkeleton() {

@@ -24,7 +24,7 @@ const DOUYIN_CONFIG = {
     // 请求超时
     timeout: 30000,
     downloadTimeout: 60000,
-    anonymousBrowserTimeout: 30000,
+    anonymousBrowserTimeout: 15000,
     // 最大重定向深度
     maxRedirects: 5,
     // 并发分块数：实测抖音 CDN 单连接约 5-7 MiB/s，8 并发聚合可达 ~60+ MiB/s（4 并发仅 ~18 MiB/s）
@@ -200,20 +200,25 @@ async function fetchVideoDetailInAnonymousBrowser(videoId) {
     const { app, BrowserWindow, session } = electron;
     if (!app?.isReady?.() || !BrowserWindow || !session) return null;
 
-    const pages = [
-        `https://www.douyin.com/jingxuan?modal_id=${videoId}`,
-        `https://www.douyin.com/video/${videoId}?previous_page=app_code_link`
-    ];
+    const videoPage = `https://www.douyin.com/video/${videoId}?previous_page=app_code_link`;
+    const pages = [videoPage, videoPage];
     const attemptTimeout = DOUYIN_CONFIG.anonymousBrowserTimeout;
 
-    for (let index = 0; index < pages.length; index++) {
-        // Reuse the normal anonymous session so Douyin's technical cookies and
-        // HTTP cache survive the check -> download flow. Keep a fresh fallback
-        // session in case the warmed session has been challenged.
-        const partition = index === 0
-            ? 'douyin-anonymous'
-            : `douyin-anonymous-fallback-${Date.now()}`;
-        const browserSession = session.fromPartition(partition);
+    for (let index = 0; index < pages.length; index += 1) {
+        const pageUrl = pages[index];
+        // This session contains only Douyin's anonymous technical cookies. It
+        // persists so the first challenge is reused by the automatic retry and
+        // by later app launches, without importing a user's browser login.
+        const browserSession = session.fromPartition('persist:douyin-anonymous');
+        const ttwid = await obtainTtwid(false);
+        if (ttwid) {
+            await browserSession.cookies.set({
+                url: 'https://www.douyin.com/',
+                name: 'ttwid',
+                value: ttwid,
+                secure: true
+            }).catch(() => {});
+        }
         const win = new BrowserWindow({
             show: false,
             webPreferences: {
@@ -237,12 +242,15 @@ async function fetchVideoDetailInAnonymousBrowser(videoId) {
             let settled = false;
             let debuggerAttached = false;
             let deadline;
+            let retryInterval;
+            let fetchingExactDetail = false;
             const detailRequestIds = new Set();
 
             const finish = (value) => {
                 if (settled) return;
                 settled = true;
                 clearTimeout(deadline);
+                clearInterval(retryInterval);
                 try {
                     if (debuggerAttached && win.webContents.debugger.isAttached()) {
                         win.webContents.debugger.detach();
@@ -282,7 +290,8 @@ async function fetchVideoDetailInAnonymousBrowser(videoId) {
             }
 
             const fetchExactDetail = async () => {
-                if (settled || win.isDestroyed()) return;
+                if (settled || fetchingExactDetail || win.isDestroyed()) return;
+                fetchingExactDetail = true;
                 try {
                     const result = await win.webContents.executeJavaScript(`
                         (async () => {
@@ -293,24 +302,33 @@ async function fetchVideoDetailInAnonymousBrowser(videoId) {
                     `);
                     const compact = compactAwemeDetail(result, videoId);
                     if (compact) finish(compact);
-                } catch (_) {}
+                } catch (_) {
+                } finally {
+                    fetchingExactDetail = false;
+                }
             };
 
             // Start as soon as JavaScript can run instead of waiting for every
             // image/video resource, then retry while challenge cookies settle.
             win.webContents.once('dom-ready', () => {
                 fetchExactDetail();
-                setTimeout(fetchExactDetail, 1000);
-                setTimeout(fetchExactDetail, 4000);
+                retryInterval = setInterval(fetchExactDetail, 2000);
             });
 
-            win.loadURL(pages[index], { userAgent: DOWNLOAD_USER_AGENT })
+            win.loadURL(pageUrl, { userAgent: DOWNLOAD_USER_AGENT })
                 .catch((error) => {
                     if (!settled) logger.warn(`[Douyin] 匿名浏览器页面加载提示: ${error.message}`);
                 });
         });
 
         if (detail) return detail;
+        if (index + 1 < pages.length) {
+            try {
+                browserSession.flushStorageData();
+                await browserSession.cookies.flushStore();
+            } catch (_) {}
+            await new Promise((resolve) => setTimeout(resolve, 500));
+        }
     }
     return null;
 }

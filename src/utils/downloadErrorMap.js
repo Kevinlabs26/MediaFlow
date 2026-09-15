@@ -99,6 +99,12 @@
                 'This video is age-restricted. Sync logged-in browser cookies and try again.'
             );
         }
+        if (/\[Douyin\].*Fresh cookies.*needed/i.test(haystack)) {
+            return t(
+                'download.errors.extractFailed',
+                'Douyin verification did not finish in time. Please try again.'
+            );
+        }
         if (/Sign in|Login required|members-only|members only|Join this channel|401|403|Forbidden|authRequired|cookies? (are )?(needed|required)|Please (log|sign) in/i.test(haystack)) {
             return t('download.errors.authRequired', 'This platform requires login. Sync browser cookies and try again');
         }

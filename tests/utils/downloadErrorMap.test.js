@@ -72,6 +72,8 @@ describe('mapDownloadError', () => {
         // Prefer age-restricted over generic auth when both phrases appear
         expect(mapDownloadError('confirm your age to continue')).toBe('download.errors.ageRestricted');
         expect(mapDownloadError('ERROR: cookies are needed')).toBe('download.errors.authRequired');
+        expect(mapDownloadError('ERROR: [Douyin] 123: Fresh cookies (not necessarily logged in) are needed'))
+            .toBe('download.errors.extractFailed');
         expect(mapDownloadError('not available in your country')).toBe('download.errors.geoRestricted');
         expect(mapDownloadError('Download cancelled by user')).toBe('download.cancelled');
         expect(mapDownloadError('ERROR: Postprocessing: ffmpeg failed')).toBe(
