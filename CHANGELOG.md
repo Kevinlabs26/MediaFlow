@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.7] - 2026-09-15
+
+### Fixed
+- Improved public YouTube extraction by avoiding stale synced cookies and retrying transient reload responses.
+- Stabilized batch Douyin extraction with clean anonymous sessions and serialized verification.
+- Added the missing batch multi-link translation label across all supported locales.
+
 ## [2.4.6] - 2026-09-15
 
 ### Fixed

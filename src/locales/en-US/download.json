@@ -92,6 +92,7 @@
     "subtitleTooltip": "Open subtitle translation",
     "openFolderTooltip": "Open file location",
     "urlExtracted": "URL extracted from text",
+    "multiUrlDetected": "Multiple links detected; switched to batch mode",
     "streaming": "Streaming...",
     "formatVideo": "🎬 Video",
     "formatAudio": "🎵 Audio",

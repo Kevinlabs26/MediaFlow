@@ -92,6 +92,7 @@
     "subtitleTooltip": "Ir para a página de tradução de legendas",
     "openFolderTooltip": "Abrir localização do arquivo",
     "urlExtracted": "URL extraído do texto",
+    "multiUrlDetected": "Foram detetados vários links; mudou para o modo em lote",
     "streaming": "A transmitir...",
     "formatVideo": "🎬 Vídeo",
     "formatAudio": "🎵 Áudio",

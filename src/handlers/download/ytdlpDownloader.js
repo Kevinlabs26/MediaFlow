@@ -4,12 +4,12 @@
  */
 
 const { spawn } = require('child_process');
-const { app } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
 const { getYtDlpPath, getFfmpegPath } = require('../../utils/binaries');
 const fs = require('fs');
 const { getProxyUrl } = require('./proxyUtils');
+const { appendCookiesArg } = require('./cookieUtils');
 const ProcessManager = require('../../utils/ProcessManager');
 const { sanitizePathSegment } = require('../../utils/sanitizePathSegment');
 
@@ -374,16 +374,8 @@ async function downloadVideo(options) {
         const proxy = getProxyUrl();
         if (proxy) args.push('--proxy', proxy);
 
-        // 鑷姩鎸傝浇娴忚鍣ㄦ墿灞曞悓姝ョ殑 Cookie
-        try {
-            const fs = require('fs');
-            const cookiePath = path.join(app.getPath('userData'), 'cookies.txt');
-            if (fs.existsSync(cookiePath)) {
-                args.push('--cookies', cookiePath);
-            }
-        } catch (err) {
-            console.error('[Downloader] Failed to check cookies.txt:', err);
-        }
+        // Public YouTube is intentionally anonymous; other platforms keep synced Cookie support.
+        appendCookiesArg(args, url);
 
         if (shouldExtractAudio) {
             args.push('-x', '--audio-format', audioFormatValue);
@@ -647,7 +639,20 @@ async function downloadVideo(options) {
                     });
                 }
             } else {
-                resolve({ success: false, error: stderrOutput || 'Download failed' });
+                const error = `${stderrOutput}${stderrBuffer}`.trim() || 'Download failed';
+                const isTemporaryYouTubeReload = /(?:youtube\.com|youtu\.be)/i.test(url)
+                    && /The page needs to be reloaded/i.test(error);
+                if (isTemporaryYouTubeReload && !options._youtubeReloadRetried) {
+                    console.warn('[Downloader] YouTube returned a temporary reload response; retrying once');
+                    resolve(downloadVideo({
+                        ...options,
+                        url,
+                        id: downloadId,
+                        _youtubeReloadRetried: true
+                    }));
+                    return;
+                }
+                resolve({ success: false, error });
             }
         });
     });

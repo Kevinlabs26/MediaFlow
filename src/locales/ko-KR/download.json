@@ -92,6 +92,7 @@
     "subtitleTooltip": "자막 번역 페이지로 이동",
     "openFolderTooltip": "파일 위치 열기",
     "urlExtracted": "텍스트에서 URL 추출됨",
+    "multiUrlDetected": "여러 링크를 감지하여 일괄 처리 모드로 전환했습니다",
     "formatVideo": "🎬 비디오",
     "formatAudio": "🎵 오디오",
     "celebration": {

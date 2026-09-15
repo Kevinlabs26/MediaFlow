@@ -43,6 +43,44 @@ test('missing synced cookies never triggers a read of the live Chrome database',
     expect(args).not.toContain('--cookies-from-browser');
 });
 
+test('public YouTube requests stay anonymous even when synced cookies exist', () => {
+    fs.existsSync.mockReturnValue(true);
+    expect(appendCookiesArg([], 'https://www.youtube.com/watch?v=mX5pb6Tfw1s')).toEqual([]);
+    expect(appendCookiesArg([], 'https://youtu.be/mX5pb6Tfw1s')).toEqual([]);
+});
+
+test('YouTube temporary reload response is retried once without cookies', async () => {
+    fs.existsSync.mockReturnValue(true);
+    let attempt = 0;
+    spawn.mockImplementation(() => {
+        const child = new EventEmitter();
+        child.stdout = new EventEmitter();
+        child.stderr = new EventEmitter();
+        child.kill = jest.fn();
+        process.nextTick(() => {
+            attempt += 1;
+            if (attempt === 1) {
+                child.stderr.emit('data', Buffer.from('ERROR: [youtube] mX5pb6Tfw1s: The page needs to be reloaded.'));
+                child.emit('close', 1);
+                return;
+            }
+            child.stdout.emit('data', Buffer.from(JSON.stringify({
+                id: 'mX5pb6Tfw1s',
+                title: 'Test video',
+                webpage_url: 'https://www.youtube.com/watch?v=mX5pb6Tfw1s',
+                formats: []
+            })));
+            child.emit('close', 0);
+        });
+        return child;
+    });
+
+    await expect(parser.getVideoInfoWithYtDlp('https://www.youtube.com/watch?v=mX5pb6Tfw1s'))
+        .resolves.toEqual(expect.objectContaining({ success: true, title: 'Test video' }));
+    expect(spawn).toHaveBeenCalledTimes(2);
+    for (const call of spawn.mock.calls) expect(call[1]).not.toContain('--cookies');
+});
+
 test('extension cookies are stored as a Netscape cookie file', () => {
     const result = writeCookiesFile([{
         domain: '.facebook.com',

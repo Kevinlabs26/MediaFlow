@@ -35,6 +35,7 @@ const DOUYIN_CONFIG = {
 const DOWNLOAD_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 const VERIFIED_INFO_CACHE_TTL = 5 * 60 * 1000;
 const verifiedInfoCache = new Map();
+let anonymousBrowserQueue = Promise.resolve();
 
 function isVerifiedVideoInfo(videoId, info) {
     return Boolean(info?.success && info?.url && String(info.videoId) === String(videoId));
@@ -161,6 +162,11 @@ function isSafeAnonymousNavigation(rawUrl) {
     }
 }
 
+async function resetAnonymousBrowserSession(browserSession) {
+    await browserSession.clearStorageData();
+    await browserSession.clearCache();
+}
+
 function getSyncedCookieHeader() {
     try {
         const cookiePath = getCookiesPath();
@@ -206,10 +212,9 @@ async function fetchVideoDetailInAnonymousBrowser(videoId) {
 
     for (let index = 0; index < pages.length; index += 1) {
         const pageUrl = pages[index];
-        // This session contains only Douyin's anonymous technical cookies. It
-        // persists so the first challenge is reused by the automatic retry and
-        // by later app launches, without importing a user's browser login.
-        const browserSession = session.fromPartition('persist:douyin-anonymous');
+        // Reuse anonymous challenge state only for this app run; disk persistence
+        // can preserve a poisoned challenge and break later batch requests.
+        const browserSession = session.fromPartition('douyin-anonymous');
         const ttwid = await obtainTtwid(false);
         if (ttwid) {
             await browserSession.cookies.set({
@@ -324,13 +329,18 @@ async function fetchVideoDetailInAnonymousBrowser(videoId) {
         if (detail) return detail;
         if (index + 1 < pages.length) {
             try {
-                browserSession.flushStorageData();
-                await browserSession.cookies.flushStore();
+                await resetAnonymousBrowserSession(browserSession);
             } catch (_) {}
             await new Promise((resolve) => setTimeout(resolve, 500));
         }
     }
     return null;
+}
+
+function queueAnonymousBrowserDetail(videoId) {
+    const task = anonymousBrowserQueue.then(() => fetchVideoDetailInAnonymousBrowser(videoId));
+    anonymousBrowserQueue = task.catch(() => null);
+    return task;
 }
 
 // ==================== ttwid Cookie 管理（2026-08 抖音强制要求） ====================
@@ -846,7 +856,7 @@ async function fetchVideoDetail(videoId) {
     }
 
     logger.info(`[Douyin] web detail API 不可用，尝试匿名浏览器解析 (videoId=${videoId})`);
-    const browserDetail = await fetchVideoDetailInAnonymousBrowser(videoId);
+    const browserDetail = await queueAnonymousBrowserDetail(videoId);
     if (browserDetail) {
         logger.info(`[Douyin] 匿名浏览器解析成功 (videoId=${videoId})`);
         return browserDetail;
@@ -1219,6 +1229,8 @@ module.exports = {
         shouldUseConcurrentDownload,
         compactAwemeDetail,
         isSafeAnonymousNavigation,
+        resetAnonymousBrowserSession,
+        fetchVideoDetailInAnonymousBrowser,
         isVerifiedVideoInfo,
         getCachedVideoInfo,
         cacheVideoInfo

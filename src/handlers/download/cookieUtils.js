@@ -19,10 +19,17 @@ function getCookiesPath() {
  * Only use cookies explicitly synced to MediaFlow. Reading a live Chrome
  * database on Windows can fail before any network request is made.
  * 用于平台专用下载服务（tiktok/instagram/facebook 2026 年起普遍需要 Cookie）
+ * Public YouTube videos are more reliable without a stale/shared login session.
+ * Restricted YouTube videos can still be handled separately as an auth flow.
  * @param {string[]} args - yt-dlp 参数数组
+ * @param {string} url - 当前媒体链接
  * @returns {string[]}
  */
-function appendCookiesArg(args = []) {
+function appendCookiesArg(args = [], url = '') {
+    if (/(?:youtube\.com|youtu\.be)/i.test(String(url))) {
+        return args;
+    }
+
     const cookiePath = getCookiesPath();
     if (cookiePath) {
         args.push('--cookies', cookiePath);

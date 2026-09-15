@@ -84,6 +84,12 @@
         if (/Video unavailable|404/i.test(haystack)) {
             return t('download.errors.videoUnavailable', 'Video unavailable or deleted');
         }
+        if (/\[youtube\].*The page needs to be reloaded/i.test(haystack)) {
+            return t(
+                'download.errors.extractFailed',
+                'YouTube temporarily rejected this request. Please try again.'
+            );
+        }
         if (/Unable to extract(?: data)?|Could not extract data|Failed to extract/i.test(haystack)) {
             return t(
                 'download.errors.extractFailed',

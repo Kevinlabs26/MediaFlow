@@ -168,7 +168,7 @@ function parseVideoFormats(info) {
  * @param {string} url - 视频 URL
  * @returns {Promise<Object>}
  */
-async function getVideoInfoWithYtDlp(url) {
+async function getVideoInfoWithYtDlp(url, retryAttempt = 0) {
     // Ensure ttwid cookie exists for Douyin yt-dlp fallback (detail API requires cookie since 2026-08)
     if (url.includes('douyin.com') || url.includes('iesdouyin.com')) {
         try {
@@ -208,7 +208,7 @@ async function getVideoInfoWithYtDlp(url) {
         const proxy = getProxyUrl();
         if (proxy) args.push('--proxy', proxy);
 
-        appendCookiesArg(args);
+        appendCookiesArg(args, targetUrl);
 
         // 安全预检：防御 Argument Injection
         if (!targetUrl || targetUrl.trim().startsWith('-')) {
@@ -224,14 +224,18 @@ async function getVideoInfoWithYtDlp(url) {
 
         let stdout = '';
         let stderr = '';
+        let processFailed = false;
+        let timedOut = false;
 
         // 超时保护：30 秒后强制终止，防止网络卡死时 Promise 永久挂起
         const timeoutHandle = setTimeout(() => {
+            timedOut = true;
             ytProcess.kill();
             resolve({ success: false, error: 'Video info fetch timed out (30s). Check your network connection.' });
         }, 30000);
 
         ytProcess.on('error', (err) => {
+            processFailed = true;
             clearTimeout(timeoutHandle);
             const msg = err?.message || String(err);
             if (/ENOENT|not found|spawn/i.test(msg)) {
@@ -250,6 +254,7 @@ async function getVideoInfoWithYtDlp(url) {
 
         ytProcess.on('close', (code) => {
             clearTimeout(timeoutHandle);
+            if (processFailed || timedOut) return;
             if (code === 0) {
                 try {
                     // Try improved parsing
@@ -286,7 +291,15 @@ async function getVideoInfoWithYtDlp(url) {
                     resolve({ success: false, error: 'Failed to parse video info: ' + e.message });
                 }
             } else {
-                resolve({ success: false, error: stderr || 'Failed to get video info' });
+                const error = stderr || 'Failed to get video info';
+                const isTemporaryYouTubeReload = /(?:youtube\.com|youtu\.be)/i.test(targetUrl)
+                    && /The page needs to be reloaded/i.test(error);
+                if (isTemporaryYouTubeReload && retryAttempt === 0) {
+                    console.warn('[VideoInfo] YouTube returned a temporary reload response; retrying once');
+                    getVideoInfoWithYtDlp(url, retryAttempt + 1).then(resolve);
+                    return;
+                }
+                resolve({ success: false, error });
             }
         });
     });

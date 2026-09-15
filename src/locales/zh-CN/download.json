@@ -75,6 +75,7 @@
       "postprocessFailed": "下载完成但后处理失败。请确认已安装 ffmpeg（设置 → 核心引擎）。"
     },
     "urlExtracted": "已自动提取链接",
+    "multiUrlDetected": "检测到多个链接，已切换到批量模式",
     "streaming": "处理中…",
     "downloadFinishedMsg": "已保存：{title}",
     "cancelledAll": "已取消所有任务",

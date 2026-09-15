@@ -92,6 +92,7 @@
     "subtitleTooltip": "Перейти к странице перевода субтитров",
     "openFolderTooltip": "Открыть папку с файлом",
     "urlExtracted": "URL извлечён из текста",
+    "multiUrlDetected": "Обнаружено несколько ссылок; включён пакетный режим",
     "streaming": "Потоковая передача...",
     "formatVideo": "🎬 Видео",
     "formatAudio": "🎵 Аудио",

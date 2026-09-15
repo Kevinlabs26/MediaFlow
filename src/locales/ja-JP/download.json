@@ -92,6 +92,7 @@
     "subtitleTooltip": "字幕翻訳ページに移動",
     "openFolderTooltip": "ファイルの保存場所を開く",
     "urlExtracted": "テキストから URL を抽出しました",
+    "multiUrlDetected": "複数のリンクを検出し、バッチモードに切り替えました",
     "streaming": "ストリーミング中...",
     "formatVideo": "🎬 動画",
     "formatAudio": "🎵 音声",

@@ -36,6 +36,13 @@ describe('mapDownloadError', () => {
         ).toBe('download.errors.extractFailed');
     });
 
+    it('maps YouTube reload failures as a temporary extraction failure', () => {
+        window.i18n.t = (key) => key;
+        expect(
+            mapDownloadError('ERROR: [youtube] mX5pb6Tfw1s: The page needs to be reloaded.')
+        ).toBe('download.errors.extractFailed');
+    });
+
     it('explains cookie access and Facebook parsing failures without claiming the video is private', () => {
         const strings = require('../../src/locales/zh-CN/download.json').download.errors;
         window.i18n.t = key => strings[key.replace('download.errors.', '')] || key;

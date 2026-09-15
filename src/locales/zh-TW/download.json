@@ -92,6 +92,7 @@
     "subtitleTooltip": "跳轉至字幕翻譯頁面處理影片",
     "openFolderTooltip": "開啟檔案所在目錄",
     "urlExtracted": "已自動提取連結",
+    "multiUrlDetected": "偵測到多個連結，已切換至批次模式",
     "streaming": "串流中...",
     "formatVideo": "🎬 影片",
     "formatAudio": "🎵 音訊",

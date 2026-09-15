@@ -72,4 +72,18 @@ describe('douyin concurrent download planning', () => {
         expect(__test__.getCachedVideoInfo('target-video')).toBe(verified);
         expect(__test__.getCachedVideoInfo('related-video')).toBeNull();
     });
+
+    test('anonymous browser retries clear stale storage instead of persisting it', async () => {
+        const browserSession = {
+            clearStorageData: jest.fn().mockResolvedValue(),
+            clearCache: jest.fn().mockResolvedValue(),
+            flushStorageData: jest.fn()
+        };
+
+        await __test__.resetAnonymousBrowserSession(browserSession);
+
+        expect(browserSession.clearStorageData).toHaveBeenCalledTimes(1);
+        expect(browserSession.clearCache).toHaveBeenCalledTimes(1);
+        expect(browserSession.flushStorageData).not.toHaveBeenCalled();
+    });
 });

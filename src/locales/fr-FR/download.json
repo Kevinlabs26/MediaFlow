@@ -92,6 +92,7 @@
     "subtitleTooltip": "Aller à la page de traduction des sous-titres",
     "openFolderTooltip": "Ouvrir l'emplacement du fichier",
     "urlExtracted": "URL extraite du texte",
+    "multiUrlDetected": "Plusieurs liens détectés ; passage au mode batch",
     "streaming": "Streaming…",
     "formatVideo": "🎬 Vidéo",
     "formatAudio": "Audio",

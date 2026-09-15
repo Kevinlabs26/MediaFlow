@@ -103,6 +103,43 @@ describe('ytdlpDownloader', () => {
             const args = spawn.mock.calls[0][1];
             expect(args).toContain('https://www.youtube.com/watch?v=123');
             expect(args).toContain('bestvideo[height<=1080][vcodec^=avc]+bestaudio[acodec^=mp4a]/bestvideo[height<=1080]+bestaudio/bestvideo+bestaudio/best');
+            expect(args).not.toContain('--cookies');
+        });
+
+        it('retries a temporary YouTube reload failure once without cookies', async () => {
+            let attempt = 0;
+            spawn.mockImplementation(() => {
+                const mockProcess = {
+                    stdout: { on: jest.fn() },
+                    stderr: {
+                        on: jest.fn((event, cb) => {
+                            if (event === 'data' && attempt === 0) {
+                                setTimeout(() => cb(Buffer.from('ERROR: [youtube] retry: The page needs to be reloaded.\n')), 0);
+                            }
+                        })
+                    },
+                    on: jest.fn((event, cb) => {
+                        if (event === 'close') {
+                            const code = attempt === 0 ? 1 : 0;
+                            attempt += 1;
+                            setTimeout(() => cb(code), 5);
+                        }
+                    }),
+                    pid: 124 + attempt
+                };
+                return mockProcess;
+            });
+
+            const result = await downloadVideo({
+                url: 'https://www.youtube.com/watch?v=retry',
+                savePath: 'C:/Downloads',
+                quality: '720',
+                sender: { isDestroyed: () => false, send: jest.fn() }
+            });
+
+            expect(result.success).toBe(true);
+            expect(spawn).toHaveBeenCalledTimes(2);
+            for (const call of spawn.mock.calls) expect(call[1]).not.toContain('--cookies');
         });
 
         it('会清洗标题中的换行和 Windows 非法文件名字符', async () => {
