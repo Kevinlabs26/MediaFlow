@@ -23,7 +23,9 @@ class DownloadFlow {
         this.selectedQuality = '720';
         this.downloadFormat = 'video';
         this.audioFormat = 'mp3';
-        this.audioQuality = '192';
+        this.audioQuality = '256';
+        this._checkToken = 0;
+        this._preparingDownload = false;
 
         // Playlist Preferences
         this.playlistQuality = '720';
@@ -78,10 +80,28 @@ class DownloadFlow {
     async checkVideo(opts = {}) {
         const autoStart = !!opts.autoStart;
         const source = opts.source || (autoStart ? 'external' : 'manual');
+        const directUrl = typeof opts.directUrl === 'string' && /^https?:\/\//i.test(opts.directUrl)
+            ? opts.directUrl.trim()
+            : '';
 
         const rawInput = this.ui.elements.urlInput.value.trim();
         if (!rawInput) {
             this.app.showToast(window.i18n?.t('download.errors.noUrl') || 'Notification', 'warning');
+            return;
+        }
+
+        // Detect multiple links before extracting a single URL; otherwise the
+        // first link would discard the rest of a pasted multi-link block.
+        const pastedUrls = this.service.extractUrlsFromText?.(rawInput) || [];
+        if (pastedUrls.length > 1) {
+            console.log('[DownloadFlow] Multiple URLs detected, switching to batch mode');
+            document.getElementById('mode-batch')?.click();
+            await new Promise(r => setTimeout(r, 100));
+            if (window.batchManager?.inputManager) {
+                window.batchManager.inputManager.processInput(pastedUrls.join('\n'));
+                await window.batchManager.handleStartClick();
+                this.ui.elements.urlInput.value = '';
+            }
             return;
         }
 
@@ -113,6 +133,15 @@ class DownloadFlow {
             return;
         }
 
+        // Every single-link entry path (manual, clipboard, protocol) converges
+        // here, so make the visible mode match the operation before rendering.
+        await this.app.router?.switchMode?.('single');
+        const checkToken = ++this._checkToken;
+        this.videoInfo = null;
+        this.playlistInfo = null;
+        this.selectedPlaylistItems.clear();
+        this.ui.hideAllDownloadUI?.();
+
         if (!this.service.isValidUrl(url)) {
             this.app.showToast(window.i18n?.t('download.errors.invalid_url') || 'Notification', 'error');
             return;
@@ -129,6 +158,7 @@ class DownloadFlow {
         } catch { /* already passed isValidUrl, skip */ }
 
         // 先显示按钮加载状态，骨架屏延迟到 API 成功后再显示
+        this.ui.showSkeleton?.();
         this.ui.elements.btnCheck.disabled = true;
         this.ui.elements.btnCheck.innerHTML = `<span class="loading-spinner"></span> <span>${window.i18n?.t('download.checking')}</span>`;
 
@@ -149,29 +179,60 @@ class DownloadFlow {
             }
 
             if (isPlaylist) {
-                const limit = parseInt(document.getElementById('setting-playlist-limit')?.value) || 1000;
+                const storedLimit = await window.mediaflow?.store?.get?.('playlistLimit');
+                const limit = parseInt(storedLimit || document.getElementById('setting-playlist-limit')?.value) || 1000;
                 const res = await this.service.getPlaylistInfo(url, limit);
+                if (!this.isCurrentCheck(checkToken)) return;
                 if (res.success) {
                     this.playlistInfo = res;
                     this.selectedPlaylistItems = new Set(res.items.map((_, i) => i));
                     // API 成功后才显示骨架屏并渲染
-                    this.ui.showSkeleton();
+                    this.ui.showSkeleton?.();
                     this.ui.renderPlaylistInfo(res, this.selectedPlaylistItems);
                     this.app.showToast(window.i18n?.t('download.playlistInfoSuccess') || 'Success', 'success');
                 } else {
                     throw new Error(res.error || (window.i18n?.t('download.getPlaylistFailed') || 'Operation failed'));
                 }
             } else {
-                const res = await this.service.getInfo(url);
-                if (res.success) {
-                    this.videoInfo = res;
+                let res;
+                try {
+                    res = await this.service.getInfo(url);
+                } catch (infoError) {
+                    // A browser-captured direct URL is still usable when the
+                    // platform metadata endpoint rejects the page request.
+                    res = { success: false, error: infoError?.message || String(infoError) };
+                }
+                if (!this.isCurrentCheck(checkToken)) return;
+                if (res?.success) {
+                    this.videoInfo = directUrl ? { ...res, directUrl } : res;
                     // API 成功后才显示骨架屏并渲染
-                    this.ui.showSkeleton();
+                    this.ui.showSkeleton?.();
                     this.ui.renderVideoInfo(res);
                     if (!autoStart) {
                         this.app.showToast(window.i18n?.t('download.videoInfoSuccess') || 'Success', 'success');
                     }
                     if (autoStart) {
+                        if (!this.isCurrentCheck(checkToken)) return;
+                        await this.autoStartAfterDetect(source);
+                    }
+                } else if (directUrl) {
+                    // The browser already resolved a signed media URL. The page/API
+                    // metadata request may still be blocked by the platform, so keep
+                    // enough metadata to let the dedicated downloader use the direct URL.
+                    this.videoInfo = {
+                        success: true,
+                        title: document.title || 'video',
+                        thumbnail: '',
+                        duration: 0,
+                        platform: /douyin\.com/i.test(url) ? 'douyin' : 'Other',
+                        url,
+                        directUrl,
+                        qualities: { 720: { height: 720, available: true, totalSize: 0 } }
+                    };
+                    this.ui.showSkeleton?.();
+                    this.ui.renderVideoInfo(this.videoInfo);
+                    if (autoStart) {
+                        if (!this.isCurrentCheck(checkToken)) return;
                         await this.autoStartAfterDetect(source);
                     }
                 } else {
@@ -179,6 +240,7 @@ class DownloadFlow {
                 }
             }
         } catch (error) {
+            if (!this.isCurrentCheck(checkToken)) return;
             console.error('[DownloadManager] Check error:', error);
 
             const userMessage = (typeof window.mapDownloadError === 'function')
@@ -198,11 +260,21 @@ class DownloadFlow {
             // 🆕 显示持久化错误卡片，而不是彻底隐藏 UI
             this.ui.showErrorState(userMessage);
         } finally {
-            this.ui.elements.btnCheck.disabled = false;
-            // 使用 innerHTML 恢复图标和翻译
-            const checkText = window.i18n?.t('download.check') || 'Analyze';
-            this.ui.elements.btnCheck.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> <span data-i18n="download.check">${checkText}</span>`;
+            if (this.isCurrentCheck(checkToken)) {
+                this.ui.elements.btnCheck.disabled = false;
+                // 使用 innerHTML 恢复图标和翻译
+                const checkText = window.i18n?.t('download.check') || 'Analyze';
+                this.ui.elements.btnCheck.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> <span data-i18n="download.check">${checkText}</span>`;
+            }
         }
+    }
+
+    isCurrentCheck(token) {
+        return token === this._checkToken && (this.app.mode == null || this.app.mode === 'single');
+    }
+
+    invalidateCheck() {
+        this._checkToken++;
     }
 
     /**
@@ -256,6 +328,7 @@ class DownloadFlow {
 
 
     async startDownload(savedOptions = null) {
+        if (this._preparingDownload) return;
         return this.executor.startDownload(savedOptions);
     }
 

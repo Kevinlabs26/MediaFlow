@@ -149,6 +149,7 @@ class BatchInputManager {
             <span class="chip-text">${text}</span>
             <button class="chip-remove">×</button>
         `;
+        chip.querySelector('.chip-text').textContent = text;
 
         chip.querySelector('.chip-remove').addEventListener('click', () => {
             this.chips.delete(text);
@@ -188,7 +189,9 @@ class BatchInputManager {
     }
 
     getUrls() {
-        return Array.from(this.chips);
+        return Array.from(this.container.querySelectorAll('.url-chip.valid .chip-text'))
+            .map(node => node.textContent || '')
+            .filter(Boolean);
     }
 
     clear() {

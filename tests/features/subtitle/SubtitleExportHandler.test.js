@@ -58,6 +58,24 @@ describe('SubtitleExportHandler', () => {
         expect(mockFlow.showProgress).not.toHaveBeenCalled();
     });
 
+    it('defaults to silent video when dubbing is disabled', () => {
+        const handler = new window.SubtitleExportHandler(mockFlow);
+        const options = [
+            { value: 'video_audio', disabled: false },
+            { value: 'video_only', disabled: false },
+            { value: 'audio_only', disabled: false }
+        ];
+        handler.typeSelect = { value: 'video_audio', options };
+        handler.enableTTS = { checked: false };
+
+        handler.syncExportTypeAvailability();
+
+        expect(handler.getExportType()).toBe('video_only');
+        expect(handler.typeSelect.value).toBe('video_only');
+        expect(options[0].disabled).toBe(true);
+        expect(options[2].disabled).toBe(true);
+    });
+
     it('shows a warning when no video is selected', async () => {
         const handler = new window.SubtitleExportHandler(mockFlow);
         mockFlow.videoFile = null;

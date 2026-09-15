@@ -40,6 +40,7 @@ class VideoInfoUIManager {
     }
 
     renderVideoInfo(info) {
+        this.ui.clearErrorResetTimer?.();
         this.hideSkeleton();
 
         const e = this.ui.elements;

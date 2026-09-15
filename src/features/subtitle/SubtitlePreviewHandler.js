@@ -235,6 +235,21 @@ class SubtitlePreviewHandler {
         return { sub, index, trackId: track.id };
     }
 
+    _getOverlayMetrics() {
+        const overlay = this.subtitleOverlay;
+        const rect = overlay?.getBoundingClientRect?.() || { left: 0, top: 0, width: 0, height: 0 };
+        const width = overlay?.clientWidth || rect.width || 1;
+        const height = overlay?.clientHeight || rect.height || 1;
+
+        return {
+            rect,
+            width,
+            height,
+            scaleX: rect.width > 0 ? rect.width / width : 1,
+            scaleY: rect.height > 0 ? rect.height / height : 1
+        };
+    }
+
     _showBoundingBox(anchorSpan, sub, index, editMode) {
         this._destroyBoundingBox(true);
 
@@ -243,9 +258,7 @@ class SubtitlePreviewHandler {
         this._selectedSpan = anchorSpan;
         this._boxWasResized = false;
 
-        const overlayW = this.subtitleOverlay.clientWidth;
-        const overlayH = this.subtitleOverlay.clientHeight;
-        const overlayRect = this.subtitleOverlay.getBoundingClientRect();
+        const { rect: overlayRect, width: overlayW, height: overlayH, scaleX, scaleY } = this._getOverlayMetrics();
         const spanRect = anchorSpan.getBoundingClientRect();
         const cs = window.getComputedStyle(anchorSpan);
 
@@ -254,17 +267,17 @@ class SubtitlePreviewHandler {
         const wrapperRect = wrapperEl?.getBoundingClientRect();
         const usesCustomLayout = wrapperEl?.style?.transform?.includes('translate(-50%, -50%)');
         const wrapperWidth = usesCustomLayout ? (wrapperRect?.width || 0) : 0;
-        const boxW = Math.max(spanRect.width + 16, wrapperWidth || 0);
-        const boxH = spanRect.height + 32;
+        const boxW = Math.max(spanRect.width / scaleX + 16, wrapperWidth / scaleX || 0);
+        const boxH = spanRect.height / scaleY + 32;
 
         const box = document.createElement('div');
         box.id = 'subtitle-bounding-box';
         
         // 【关键修复】使用渲染同款逻辑反推坐标
         const rawLeft = usesCustomLayout
-            ? (wrapperRect.left - overlayRect.left)
-            : (spanRect.left - overlayRect.left - 8);
-        const rawTop = spanRect.top - overlayRect.top - 16;
+            ? ((wrapperRect.left - overlayRect.left) / scaleX)
+            : ((spanRect.left - overlayRect.left) / scaleX - 8);
+        const rawTop = (spanRect.top - overlayRect.top) / scaleY - 16;
         const leftPx = Math.max(0, Math.min(rawLeft, Math.max(0, overlayW - boxW))); /*
             : (spanRect.top - this.subtitleOverlay.getBoundingClientRect().top - (32-16)/2); // 非custom模式保留视觉对齐
 
@@ -394,8 +407,7 @@ class SubtitlePreviewHandler {
     }
 
     _syncPositionFromBox(box, anchorSpan, baseFontSize = null) {
-        const overlayW = this.subtitleOverlay.clientWidth;
-        const overlayH = this.subtitleOverlay.clientHeight;
+        const { width: overlayW, height: overlayH } = this._getOverlayMetrics();
         if (!overlayW || !overlayH) return;
 
         const left = parseFloat(box.style.left) || 0;
@@ -473,12 +485,13 @@ class SubtitlePreviewHandler {
             e.preventDefault(); e.stopPropagation();
             const dir = handle.dataset.dir;
             const startX = e.clientX, startY = e.clientY;
+            const { scaleX, scaleY } = this._getOverlayMetrics();
             const startLeft = parseFloat(box.style.left) || 0, startTop = parseFloat(box.style.top) || 0;
             const startW = box.offsetWidth, startH = box.offsetHeight;
             const startFontSize = parseFloat(cs.fontSize), ta = box.querySelector('textarea.subtitle-inline-ta');
 
             const onMove = (me) => {
-                const dx = me.clientX - startX, dy = me.clientY - startY;
+                const dx = (me.clientX - startX) / scaleX, dy = (me.clientY - startY) / scaleY;
                 let nL = startLeft, nT = startTop, nW = startW, nH = startH;
                 if (dir.includes('e')) nW = Math.max(60, startW + dx);
                 if (dir.includes('s')) nH = Math.max(40, startH + dy);
@@ -511,9 +524,14 @@ class SubtitlePreviewHandler {
             if (e.target?.classList?.contains('resize-handle') || e.target?.tagName === 'TEXTAREA') return;
             e.preventDefault(); e.stopPropagation();
             const startX = e.clientX, startY = e.clientY;
+            const { scaleX, scaleY } = this._getOverlayMetrics();
             const startL = parseFloat(box.style.left) || 0, startT = parseFloat(box.style.top) || 0;
             let moved = false;
-            const onMove = (me) => { moved = true; box.style.left = (startL + me.clientX - startX) + 'px'; box.style.top = (startT + me.clientY - startY) + 'px'; };
+            const onMove = (me) => {
+                moved = true;
+                box.style.left = (startL + (me.clientX - startX) / scaleX) + 'px';
+                box.style.top = (startT + (me.clientY - startY) / scaleY) + 'px';
+            };
             const onUp = () => {
                 document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp);
                 if (moved && !this._isInlineEditing) {

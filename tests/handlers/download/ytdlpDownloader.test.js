@@ -37,11 +37,15 @@ jest.mock('../../../services/platforms/facebook', () => ({
     isFacebookUrl: jest.fn().mockReturnValue(false)
 }));
 
+const douyin = require('../../../services/platforms/douyin');
+
 describe('ytdlpDownloader', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         fs.existsSync.mockReturnValue(true);
         Store.prototype.get = jest.fn().mockReturnValue(null);
+        douyin.isDouyinUrl.mockReturnValue(false);
+        douyin.downloadVideo.mockReset();
     });
 
     describe('normalizeUrl', () => {
@@ -193,6 +197,29 @@ describe('ytdlpDownloader', () => {
             expect(args).toContain('-x');
             expect(audioFormatIndex).toBeGreaterThan(-1);
             expect(args[audioFormatIndex + 1]).toBe('m4a');
+        });
+
+        it('does not replace a Douyin page with an unverified browser media URL', async () => {
+            const pageUrl = 'https://www.douyin.com/video/7683071155057879717';
+            douyin.isDouyinUrl.mockImplementation((url) => url === pageUrl);
+            douyin.downloadVideo.mockResolvedValue({
+                success: true,
+                file: 'C:/Downloads/video.mp4',
+                path: 'C:/Downloads'
+            });
+
+            const result = await downloadVideo({
+                url: pageUrl,
+                directUrl: 'https://v3-dy-o.zjcdn.com/unverified/media-video-avc1/',
+                platform: 'douyin',
+                savePath: 'C:/Downloads'
+            });
+
+            expect(result.success).toBe(true);
+            expect(douyin.downloadVideo).toHaveBeenCalledWith(pageUrl, expect.objectContaining({
+                directUrl: undefined
+            }));
+            expect(spawn).not.toHaveBeenCalled();
         });
     });
 });

@@ -208,7 +208,7 @@ html[data-theme="light"] #image-queue .queue-item.active {
     box-sizing: border-box;
 }
 
-.btn-text {
+.queue-action-btn .btn-text {
     font-size: var(--ws-font-meta, 11px);
     white-space: nowrap;
     display: block;

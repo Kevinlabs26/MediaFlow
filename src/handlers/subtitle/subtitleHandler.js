@@ -161,20 +161,25 @@ async function prepareTrimmedSourceMedia(event, params, tempFiles = [], controll
     const trimmedOutputPath = path.join(tempDir, 'trimmed_source.mp4');
     const segmentPaths = [];
     let duration = 0;
+    const includeAudio = params.exportType !== 'video_only'
+        && params.ttsSettings?.audioMode !== 'mute';
 
     for (const [index, segment] of sourceSegments.entries()) {
         const segmentPath = path.join(tempDir, `segment_${index}.mp4`);
         const segmentDuration = segment.end - segment.start;
         segmentPaths.push(segmentPath);
         duration += segmentDuration;
-        await runTrimCommand([
+        const trimArgs = [
             '-y', '-i', params.videoPath,
             '-ss', String(segment.start), '-t', String(segmentDuration),
-            '-map', '0:v:0', '-map', '0:a?',
+            '-map', '0:v:0',
+            ...(includeAudio ? ['-map', '0:a?'] : []),
             '-c:v', 'libx264', '-preset', 'fast', '-pix_fmt', 'yuv420p',
-            '-c:a', 'aac', '-movflags', '+faststart',
+            ...(includeAudio ? ['-c:a', 'aac'] : []),
+            '-movflags', '+faststart',
             segmentPath
-        ], controller);
+        ];
+        await runTrimCommand(trimArgs, controller);
         safeSendToRenderer(event, 'subtitle:burn-progress', 2 + Math.round(((index + 1) / sourceSegments.length) * 23));
     }
 
@@ -391,8 +396,10 @@ function setupSubtitleHandlers() {
             }
             fp.push(`${currentInput}${overlayStreamLabel}overlay=0:0:format=auto,format=yuv420p[out_v]`);
 
-            let audioMap = ['-map', '0:a?'];
-            let audioCodec = ['-c:a', 'copy'];
+            const muteAudio = params.exportType === 'video_only'
+                || params.ttsSettings?.audioMode === 'mute';
+            let audioMap = muteAudio ? [] : ['-map', '0:a?'];
+            let audioCodec = muteAudio ? [] : ['-c:a', 'copy'];
             let ttsInput = [];
             const ttsInputIndex = 2;
 

@@ -4,7 +4,6 @@
  */
 
 const { spawn } = require('child_process');
-const { app } = require('electron');
 const { getYtDlpPath } = require('../../utils/binaries');
 const { getProxyUrl } = require('./proxyUtils');
 
@@ -15,6 +14,7 @@ const douyin = require('../../../services/platforms/douyin');
 const tiktok = require('../../../services/platforms/tiktok');
 const instagram = require('../../../services/platforms/instagram');
 const facebook = require('../../../services/platforms/facebook');
+const { appendCookiesArg } = require('./cookieUtils');
 
 /**
  * 将普通链接转换为更稳定的提取链接 (如 TikTok Embed)
@@ -208,15 +208,7 @@ async function getVideoInfoWithYtDlp(url) {
         const proxy = getProxyUrl();
         if (proxy) args.push('--proxy', proxy);
 
-        // 自动挂载浏览器扩展同步的 Cookie
-        try {
-            const cookiePath = path.join(app.getPath('userData'), 'cookies.txt');
-            if (fs.existsSync(cookiePath)) {
-                args.push('--cookies', cookiePath);
-            }
-        } catch (err) {
-            console.error('[Parser] Failed to check cookies.txt:', err);
-        }
+        appendCookiesArg(args);
 
         // 安全预检：防御 Argument Injection
         if (!targetUrl || targetUrl.trim().startsWith('-')) {
@@ -332,7 +324,11 @@ async function getVideoInfo(url) {
         try {
             const info = await facebook.getVideoInfo(url);
             if (info && info.title) return info;
-        } catch (error) { console.warn('[VideoInfo] Facebook parser failed, falling back:', error); }
+        } catch (error) {
+            // Keep the original generic fallback: it may receive a different page
+            // shape/UA and can still parse videos that the dedicated path misses.
+            console.warn('[VideoInfo] Facebook parser failed, falling back:', error);
+        }
     }
 
     // Default: use yt-dlp (Generic Fallback)

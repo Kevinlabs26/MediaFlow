@@ -12,6 +12,10 @@
         "title": "GitHub Sponsors",
         "desc": "Sponsor monthly on GitHub to support long-term development."
       },
+      "bmac": {
+        "title": "Buy Me a Coffee",
+        "desc": "Buy Me a Coffee에서 프로젝트를 후원해 주세요. 어떤 금액도 감사합니다."
+      },
       "kofi": {
         "title": "Ko-fi · 커피 한 잔",
         "desc": "Ko-fi에서 일회성 또는 월별 팁. 어떤 금액도 환영합니다."
@@ -22,7 +26,7 @@
     "github": "GitHub Repository",
     "title": "Support MediaFlow",
     "badge_free": "Free forever",
-    "badge_opensource": "MIT 라이선스",
+    "badge_opensource": "Apache 2.0 라이선스",
     "badge_nolock": "No locked features",
     "scan": "휴대폰으로 스캔"
   }

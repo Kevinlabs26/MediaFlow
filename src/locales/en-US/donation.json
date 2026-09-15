@@ -12,6 +12,10 @@
         "title": "GitHub Sponsors",
         "desc": "Sponsor monthly on GitHub to support long-term development."
       },
+      "bmac": {
+        "title": "Buy Me a Coffee",
+        "desc": "Support the project on Buy Me a Coffee. Any amount is appreciated."
+      },
       "kofi": {
         "title": "Ko-fi · Buy me a coffee",
         "desc": "A one-time or monthly tip on Ko-fi. Any amount is appreciated."
@@ -22,7 +26,7 @@
     "github": "GitHub Repository",
     "title": "Support MediaFlow",
     "badge_free": "Free forever",
-    "badge_opensource": "MIT licensed",
+    "badge_opensource": "Apache 2.0 licensed",
     "badge_nolock": "No locked features",
     "scan": "Scan with your phone"
   }

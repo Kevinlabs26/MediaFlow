@@ -30,13 +30,17 @@ class DownloadService {
         const trimmed = text.trim();
         // Fast path: already a clean URL
         if (this.isValidUrl(trimmed)) return trimmed;
-        // Extract first https?:// URL, stopping at whitespace or CJK characters
-        const match = trimmed.match(/https?:\/\/[^\s\u4e00-\u9fff\uff00-\uffef！。，、；：？（）【】「」]+/);
-        if (match) {
-            // Strip trailing punctuation that may have been captured
-            return match[0].replace(/[.,!?;:'")\]>]+$/, '');
-        }
-        return null;
+        return this.extractUrlsFromText(trimmed)[0] || null;
+    }
+
+    /**
+     * 从混合文本中提取全部 URL，供批量粘贴使用。
+     */
+    extractUrlsFromText(text) {
+        if (!text) return [];
+        return [...String(text).matchAll(/https?:\/\/[^\s\u4e00-\u9fff\uff00-\uffef！。，、；：？（）【】「」]+/gi)]
+            .map(match => match[0].replace(/[.,!?;:'")\]>]+$/, ''))
+            .filter(Boolean);
     }
 
     /**
@@ -57,6 +61,16 @@ class DownloadService {
             }
         }
         return path;
+    }
+
+    async getSingleDownloadDir() {
+        const savePath = await this.getDownloadPath();
+        if (!savePath) return null;
+
+        const normalizedPath = savePath.replace(/\\/g, '/').replace(/\/$/, '').toLowerCase();
+        return normalizedPath.endsWith('/mediaflow') || normalizedPath === 'mediaflow'
+            ? window.mediaflow.path.join(savePath, 'Single Download')
+            : window.mediaflow.path.join(savePath, 'MediaFlow', 'Single Download');
     }
 
     /**
@@ -88,20 +102,9 @@ class DownloadService {
     async buildDownloadOptions(videoInfo, uiState) {
         if (!videoInfo) return null;
 
-        const savePath = await this.getDownloadPath();
-        if (!savePath) {
+        const finalOutputDir = await this.getSingleDownloadDir();
+        if (!finalOutputDir) {
             throw new Error('MISSING_PATH');
-        }
-
-        // 规范化路径逻辑
-        const normalizedPath = savePath.replace(/\\/g, '/').replace(/\/$/, '').toLowerCase();
-        const isMediaFlow = normalizedPath.endsWith('/mediaflow') || normalizedPath === 'mediaflow';
-
-        let finalOutputDir;
-        if (isMediaFlow) {
-            finalOutputDir = await window.mediaflow.path.join(savePath, 'Single Download');
-        } else {
-            finalOutputDir = await window.mediaflow.path.join(savePath, 'MediaFlow', 'Single Download');
         }
 
         // 确保目录存在
@@ -137,7 +140,8 @@ class DownloadService {
             writeSubtitles: uiState.writeSubtitles,
             trimRange: trimRange,
             thumbnail: videoInfo.thumbnail,
-            platform: videoInfo.platform
+            platform: videoInfo.platform,
+            directUrl: videoInfo.directUrl || undefined
         };
     }
 

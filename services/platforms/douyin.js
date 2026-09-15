@@ -3,9 +3,8 @@
  * 
  * 工作原理（2026 抖音改版后）：
  * 1. 解析短链接/直链获取视频ID
- * 2. 通过 ttwid.bytedance.com 免登录注册获取 ttwid Cookie（一年有效，失败时自动刷新）
- * 3. 带 ttwid 调用 www.douyin.com/aweme/v1/web/aweme/detail/ 获取视频数据
- *    （该接口自 2026-08 起强制要求 Cookie，分享页 _ROUTER_DATA 已不再包含 videoInfoRes）
+ * 2. 优先使用已同步 Cookie 调用 web detail API
+ * 3. 无用户 Cookie 时，用隐藏的匿名 Electron 会话完成网页校验并读取 detail API
  * 4. 解析 aweme_detail：标题、封面、无水印 play_addr 直链
  * 5. 下载直链（支持 Range 断点续传）
  * 兼容回退：旧版 iesdouyin.com/share/video/{id} + _ROUTER_DATA 解析仍保留
@@ -17,6 +16,7 @@ const path = require('path');
 const fs = require('fs');
 const { sanitizePathSegment } = require('../../src/utils/sanitizePathSegment');
 const logger = require('../../src/utils/logger');
+const { getCookiesPath } = require('../../src/handlers/download/cookieUtils');
 
 const DOUYIN_CONFIG = {
     // 模拟 iPhone 16.0 浏览器 (用户推荐版本)
@@ -24,6 +24,7 @@ const DOUYIN_CONFIG = {
     // 请求超时
     timeout: 30000,
     downloadTimeout: 60000,
+    anonymousBrowserTimeout: 30000,
     // 最大重定向深度
     maxRedirects: 5,
     // 并发分块数：实测抖音 CDN 单连接约 5-7 MiB/s，8 并发聚合可达 ~60+ MiB/s（4 并发仅 ~18 MiB/s）
@@ -32,6 +33,31 @@ const DOUYIN_CONFIG = {
 };
 
 const DOWNLOAD_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+const VERIFIED_INFO_CACHE_TTL = 5 * 60 * 1000;
+const verifiedInfoCache = new Map();
+
+function isVerifiedVideoInfo(videoId, info) {
+    return Boolean(info?.success && info?.url && String(info.videoId) === String(videoId));
+}
+
+function getCachedVideoInfo(videoId) {
+    const key = String(videoId);
+    const cached = verifiedInfoCache.get(key);
+    if (cached && cached.expiresAt > Date.now() && isVerifiedVideoInfo(videoId, cached.info)) {
+        return cached.info;
+    }
+    verifiedInfoCache.delete(key);
+    return null;
+}
+
+function cacheVideoInfo(videoId, info) {
+    if (!isVerifiedVideoInfo(videoId, info)) return info;
+    verifiedInfoCache.set(String(videoId), {
+        info,
+        expiresAt: Date.now() + VERIFIED_INFO_CACHE_TTL
+    });
+    return info;
+}
 
 /**
  * 检测是否是抖音链接
@@ -100,7 +126,7 @@ function httpRequest(url, options = {}) {
             reject(new Error('Request timeout'));
         });
 
-        req.end();
+        req.end(options.body);
     });
 }
 
@@ -109,6 +135,184 @@ function buildDownloadHeaders(extraHeaders = {}) {
         'User-Agent': DOWNLOAD_USER_AGENT,
         ...extraHeaders
     };
+}
+
+function compactAwemeDetail(detail, expectedVideoId) {
+    const actualVideoId = detail?.aweme_id || detail?.item_id;
+    if (expectedVideoId && String(actualVideoId) !== String(expectedVideoId)) return null;
+    if (!detail?.video?.play_addr?.url_list?.length) return null;
+    return {
+        aweme_id: detail.aweme_id,
+        desc: detail.desc,
+        author: { nickname: detail.author?.nickname || '' },
+        video: {
+            duration: detail.video.duration,
+            cover: { url_list: detail.video.cover?.url_list || [] },
+            play_addr: { url_list: detail.video.play_addr.url_list }
+        }
+    };
+}
+
+function isSafeAnonymousNavigation(rawUrl) {
+    try {
+        return ['http:', 'https:'].includes(new URL(rawUrl).protocol);
+    } catch {
+        return false;
+    }
+}
+
+function getSyncedCookieHeader() {
+    try {
+        const cookiePath = getCookiesPath();
+        if (!cookiePath || !fs.existsSync(cookiePath)) return '';
+        const now = Math.floor(Date.now() / 1000);
+        return fs.readFileSync(cookiePath, 'utf8')
+            .split(/\r?\n/)
+            .filter((line) => line && !line.startsWith('#'))
+            .map((line) => line.split('\t'))
+            .filter((parts) => {
+                const domain = parts[0] || '';
+                const expires = Number(parts[4]) || 0;
+                return /(?:^|\.)douyin\.com$|(?:^|\.)iesdouyin\.com$/i.test(domain.replace(/^\./, '')) && (!expires || expires > now);
+            })
+            .map((parts) => `${parts[5]}=${parts.slice(6).join('\t')}`)
+            .filter((cookie) => !cookie.startsWith('undefined='))
+            .join('; ');
+    } catch (error) {
+        logger.warn(`[Douyin] 读取同步 Cookie 失败: ${error.message}`);
+        return '';
+    }
+}
+
+/**
+ * Resolve public video metadata in isolated in-memory browser sessions.
+ * The page itself performs Douyin's challenge; MediaFlow reads its signed
+ * detail response without importing user browser Cookies.
+ */
+async function fetchVideoDetailInAnonymousBrowser(videoId) {
+    let electron;
+    try {
+        electron = require('electron');
+    } catch {
+        return null;
+    }
+
+    const { app, BrowserWindow, session } = electron;
+    if (!app?.isReady?.() || !BrowserWindow || !session) return null;
+
+    const pages = [
+        `https://www.douyin.com/jingxuan?modal_id=${videoId}`,
+        `https://www.douyin.com/video/${videoId}?previous_page=app_code_link`
+    ];
+    const attemptTimeout = DOUYIN_CONFIG.anonymousBrowserTimeout;
+
+    for (let index = 0; index < pages.length; index++) {
+        // Reuse the normal anonymous session so Douyin's technical cookies and
+        // HTTP cache survive the check -> download flow. Keep a fresh fallback
+        // session in case the warmed session has been challenged.
+        const partition = index === 0
+            ? 'douyin-anonymous'
+            : `douyin-anonymous-fallback-${Date.now()}`;
+        const browserSession = session.fromPartition(partition);
+        const win = new BrowserWindow({
+            show: false,
+            webPreferences: {
+                session: browserSession,
+                sandbox: true,
+                contextIsolation: true,
+                backgroundThrottling: false,
+                autoplayPolicy: 'no-user-gesture-required'
+            }
+        });
+        win.webContents.setAudioMuted(true);
+        win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+        const blockExternalNavigation = (event, legacyUrl) => {
+            if (!isSafeAnonymousNavigation(event.url || legacyUrl)) event.preventDefault();
+        };
+        win.webContents.on('will-frame-navigate', blockExternalNavigation);
+        win.webContents.on('will-navigate', blockExternalNavigation);
+        win.webContents.on('will-redirect', blockExternalNavigation);
+
+        const detail = await new Promise((resolve) => {
+            let settled = false;
+            let debuggerAttached = false;
+            let deadline;
+            const detailRequestIds = new Set();
+
+            const finish = (value) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(deadline);
+                try {
+                    if (debuggerAttached && win.webContents.debugger.isAttached()) {
+                        win.webContents.debugger.detach();
+                    }
+                } catch (_) {}
+                try { if (!win.isDestroyed()) win.destroy(); } catch (_) {}
+                resolve(value || null);
+            };
+
+            deadline = setTimeout(() => finish(null), attemptTimeout);
+            win.once('closed', () => finish(null));
+
+            try {
+                win.webContents.debugger.attach('1.3');
+                debuggerAttached = true;
+                win.webContents.debugger.on('message', async (_event, method, params) => {
+                    if (method === 'Network.responseReceived') {
+                        if (/\/aweme\/v1\/web\/aweme\/detail\//i.test(params.response?.url || '') && params.response?.status === 200) {
+                            detailRequestIds.add(params.requestId);
+                        }
+                        return;
+                    }
+                    if (method !== 'Network.loadingFinished' || !detailRequestIds.delete(params.requestId)) return;
+                    try {
+                        const response = await win.webContents.debugger.sendCommand('Network.getResponseBody', {
+                            requestId: params.requestId
+                        });
+                        const compact = compactAwemeDetail(JSON.parse(response.body || '{}').aweme_detail, videoId);
+                        if (compact) finish(compact);
+                    } catch (_) {}
+                });
+                win.webContents.debugger.sendCommand('Network.enable').catch((error) => {
+                    if (!settled) logger.warn(`[Douyin] 匿名浏览器网络监听不可用: ${error.message}`);
+                });
+            } catch (error) {
+                logger.warn(`[Douyin] 匿名浏览器网络监听不可用: ${error.message}`);
+            }
+
+            const fetchExactDetail = async () => {
+                if (settled || win.isDestroyed()) return;
+                try {
+                    const result = await win.webContents.executeJavaScript(`
+                        (async () => {
+                            const response = await fetch('/aweme/v1/web/aweme/detail/?aweme_id=${videoId}&device_platform=webapp&aid=6383&channel=channel_pc_web&request_source=600&origin_type=quick_player');
+                            if (!response.ok) return null;
+                            return (await response.json()).aweme_detail || null;
+                        })()
+                    `);
+                    const compact = compactAwemeDetail(result, videoId);
+                    if (compact) finish(compact);
+                } catch (_) {}
+            };
+
+            // Start as soon as JavaScript can run instead of waiting for every
+            // image/video resource, then retry while challenge cookies settle.
+            win.webContents.once('dom-ready', () => {
+                fetchExactDetail();
+                setTimeout(fetchExactDetail, 1000);
+                setTimeout(fetchExactDetail, 4000);
+            });
+
+            win.loadURL(pages[index], { userAgent: DOWNLOAD_USER_AGENT })
+                .catch((error) => {
+                    if (!settled) logger.warn(`[Douyin] 匿名浏览器页面加载提示: ${error.message}`);
+                });
+        });
+
+        if (detail) return detail;
+    }
+    return null;
 }
 
 // ==================== ttwid Cookie 管理（2026-08 抖音强制要求） ====================
@@ -575,12 +779,14 @@ async function extractVideoId(url) {
  * @returns {Promise<Object|null>} aweme_detail 对象
  */
 async function fetchVideoDetail(videoId) {
+    const syncedCookies = getSyncedCookieHeader();
+
     const tryWith = async (ttwid) => {
         const detailUrl = `https://www.douyin.com/aweme/v1/web/aweme/detail/?aweme_id=${videoId}`;
         try {
             const result = await httpRequest(detailUrl, {
                 headers: {
-                    'Cookie': `ttwid=${ttwid}`,
+                    'Cookie': [syncedCookies, `ttwid=${ttwid}`].filter(Boolean).join('; '),
                     'Referer': 'https://www.douyin.com/',
                     'Accept': 'application/json, text/plain, */*'
                 }
@@ -597,7 +803,7 @@ async function fetchVideoDetail(videoId) {
                 return null;
             }
             if (parsed && parsed.aweme_detail) {
-                return parsed.aweme_detail;
+                return compactAwemeDetail(parsed.aweme_detail, videoId);
             }
             logger.warn(`[Douyin] detail API 未返回 aweme_detail. status_code=${parsed && parsed.status_code} 返回体前200字符=${result.data.substring(0, 200)}`);
             return null;
@@ -607,14 +813,27 @@ async function fetchVideoDetail(videoId) {
         }
     };
 
-    let ttwid = await obtainTtwid(false);
-    if (ttwid) {
-        const detail = await tryWith(ttwid);
-        if (detail) return detail;
-        // ttwid 可能已失效，强制刷新后再试一次
-        ttwid = await obtainTtwid(true);
-        if (ttwid) return await tryWith(ttwid);
+    if (syncedCookies) {
+        let ttwid = await obtainTtwid(false);
+        if (ttwid) {
+            const detail = await tryWith(ttwid);
+            if (detail) return detail;
+            // ttwid 可能已失效，强制刷新后再试一次
+            ttwid = await obtainTtwid(true);
+            if (ttwid) {
+                const refreshedDetail = await tryWith(ttwid);
+                if (refreshedDetail) return refreshedDetail;
+            }
+        }
     }
+
+    logger.info(`[Douyin] web detail API 不可用，尝试匿名浏览器解析 (videoId=${videoId})`);
+    const browserDetail = await fetchVideoDetailInAnonymousBrowser(videoId);
+    if (browserDetail) {
+        logger.info(`[Douyin] 匿名浏览器解析成功 (videoId=${videoId})`);
+        return browserDetail;
+    }
+    logger.warn(`[Douyin] 匿名浏览器解析失败 (videoId=${videoId})`);
     return null;
 }
 
@@ -817,6 +1036,12 @@ async function getVideoInfo(url) {
         };
     }
 
+    const cachedInfo = getCachedVideoInfo(videoId);
+    if (cachedInfo) {
+        logger.info(`[Douyin] 使用已校验的视频信息缓存 (videoId=${videoId})`);
+        return cachedInfo;
+    }
+
     // 1. 优先走 web 详情 API（2026-08 抖音改版后的可用方式，需 ttwid Cookie）
     const awemeDetail = await fetchVideoDetail(videoId);
     const detailInfo = extractVideoInfoFromAwemeDetail(awemeDetail);
@@ -828,7 +1053,7 @@ async function getVideoInfo(url) {
             title = title.substring(0, 77) + '...';
         }
 
-        return {
+        return cacheVideoInfo(videoId, {
             success: true,
             title,
             thumbnail: detailInfo.thumbnail,
@@ -840,7 +1065,7 @@ async function getVideoInfo(url) {
             qualities: {
                 720: { height: 720, available: true, totalSize: 0, label: '无水印 HD' }
             }
-        };
+        });
     }
 
     // 2. 兼容回退：解析分享页 _ROUTER_DATA
@@ -861,7 +1086,7 @@ async function getVideoInfo(url) {
             title = title.substring(0, 77) + '...';
         }
 
-        return {
+        return cacheVideoInfo(videoId, {
             success: true,
             title,
             thumbnail: info.thumbnail,
@@ -873,7 +1098,7 @@ async function getVideoInfo(url) {
             qualities: {
                 720: { height: 720, available: true, totalSize: 0, label: '无水印 HD' }
             }
-        };
+        });
     }
 
     return {
@@ -906,28 +1131,22 @@ async function downloadVideo(url, options = {}) {
         return { success: false, error: '抖音用户主页批量下载暂不支持。请使用单个视频链接。' };
     }
 
-    // 获取视频信息
-    let videoUrl = options.directUrl;
+    // Browser-observed CDN requests may belong to related preloaded videos.
+    // Always resolve and verify the target page ID here.
     let title = options.title || 'douyin_video';
+    const info = await getVideoInfo(url);
 
-    // 如果未提供直链，则解析获取
-    if (!videoUrl) {
-        const info = await getVideoInfo(url);
-
-        if (!info.success) {
-            logger.error(`[Douyin] 获取视频信息失败: ${info.error || '无法获取视频信息'}`);
-            return { success: false, error: info.error || '无法获取视频信息' };
-        }
-
-        // getVideoInfo 返回的直链字段为 url（与 downloadVideo 的 videoUrl 兼容双读取）
-        const resolvedUrl = info.url || info.videoUrl;
-        if (!resolvedUrl) {
-            logger.error(`[Douyin] 未获得视频下载地址 (URL=${url})`);
-            return { success: false, error: '无法获取视频下载地址' };
-        }
-        videoUrl = resolvedUrl;
-        title = info.title || title;
+    if (!info.success) {
+        logger.error(`[Douyin] 获取视频信息失败: ${info.error || '无法获取视频信息'}`);
+        return { success: false, error: info.error || '无法获取视频信息' };
     }
+
+    const videoUrl = info.url || info.videoUrl;
+    if (!videoUrl) {
+        logger.error(`[Douyin] 未获得视频下载地址 (URL=${url})`);
+        return { success: false, error: '无法获取视频下载地址' };
+    }
+    title = info.title || title;
 
     // 安全文件名
     const safeTitle = sanitizePathSegment(title, { fallback: 'douyin_video', maxLength: 50 });
@@ -979,6 +1198,11 @@ module.exports = {
     __test__: {
         buildChunkRanges,
         getConcurrentChunkCount,
-        shouldUseConcurrentDownload
+        shouldUseConcurrentDownload,
+        compactAwemeDetail,
+        isSafeAnonymousNavigation,
+        isVerifiedVideoInfo,
+        getCachedVideoInfo,
+        cacheVideoInfo
     }
 };

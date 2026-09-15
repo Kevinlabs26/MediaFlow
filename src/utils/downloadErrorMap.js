@@ -53,6 +53,19 @@
 
         const haystack = `${code} ${msg}`;
 
+        if (/Could not copy .*cookie database|failed to decrypt.*(?:DPAPI|cookie)|cookie.*decryption/i.test(haystack)) {
+            return t('download.errors.browserCookiesUnavailable', 'Cannot read browser cookies. Open Facebook in your logged-in browser and use the MediaFlow extension to sync cookies, then retry.');
+        }
+        if (/\[facebook\]/i.test(haystack) && /Cannot parse data/i.test(haystack)) {
+            return t('download.errors.facebookParseFailed', 'Facebook did not return parseable video data. Play the video in your browser, then send the current video with the MediaFlow extension so it can capture the media stream directly. Cookies are only needed when playback requires signing in.');
+        }
+        if (/\[instagram\]/i.test(haystack) && /Instagram sent an empty media response/i.test(haystack)) {
+            return t(
+                'download.errors.instagramEmptyMedia',
+                'Instagram did not return media data for this link. The post may be unavailable, restricted, or visible only after login.'
+            );
+        }
+
         if (/YTDLP_MISSING|yt-dlp not found|Binary missing|Failed to start yt-dlp/i.test(haystack)) {
             return t(
                 'download.errors.ytdlpMissing',
@@ -70,6 +83,12 @@
         }
         if (/Video unavailable|404/i.test(haystack)) {
             return t('download.errors.videoUnavailable', 'Video unavailable or deleted');
+        }
+        if (/Unable to extract(?: data)?|Could not extract data|Failed to extract/i.test(haystack)) {
+            return t(
+                'download.errors.extractFailed',
+                'Unable to read media information from this link. Check that the link is still valid, update yt-dlp, and try again.'
+            );
         }
         if (/Private video|Private/i.test(haystack)) {
             return t('download.errors.privateVideo', 'Private or restricted video. Unable to archive');

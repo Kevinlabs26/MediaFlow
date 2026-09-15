@@ -38,8 +38,9 @@ class DownloadExecutor {
      * 开始下载流程 (单视频)
      */
     async startDownload(savedOptions = null) {
-        if (this.manager.isDownloading) return;
+        if (this.manager.isDownloading || this.manager._preparingDownload) return;
 
+        this.manager._preparingDownload = true;
         let options = savedOptions;
         if (!options) {
             try {
@@ -57,9 +58,11 @@ class DownloadExecutor {
                 });
             } catch (e) {
                 if (e.message === 'MISSING_PATH') this.app.showToast(window.i18n?.t('download.missingPath') || 'Please set download directory first', 'warning');
+                this.manager._preparingDownload = false;
                 return;
             }
         }
+        this.manager._preparingDownload = false;
         if (!options) return;
 
         this.manager.isDownloading = true;
@@ -173,7 +176,11 @@ class DownloadExecutor {
                     // 🆕 构建播放列表专用保存路径
                     const playlistTitle = this.manager.playlistInfo?.title || 'Unknown Playlist';
                     const safePlaylistTitle = sanitizePathSegment(playlistTitle, { fallback: 'Unknown Playlist', maxLength: 50 });
-                    const playlistPath = await window.mediaflow.path.join(savePath, 'MediaFlow', 'Playlist Downloads', safePlaylistTitle);
+                    const normalizedSavePath = savePath.replace(/[\\/]$/, '');
+                    const mediaFlowRoot = /[\\/]MediaFlow$/i.test(normalizedSavePath)
+                        ? normalizedSavePath
+                        : await window.mediaflow.path.join(normalizedSavePath, 'MediaFlow');
+                    const playlistPath = await window.mediaflow.path.join(mediaFlowRoot, 'Playlist Downloads', safePlaylistTitle);
 
                     // 确保目录存在
                     try {

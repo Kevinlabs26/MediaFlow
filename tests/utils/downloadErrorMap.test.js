@@ -27,6 +27,38 @@ describe('mapDownloadError', () => {
         expect(mapDownloadError({ code: 'FFMPEG_MISSING', message: 'ffmpeg not found' })).toBe('FFMPEG_FRIENDLY');
     });
 
+    it('maps extractor failures to an actionable message', () => {
+        window.i18n.t = (key) => key;
+        expect(
+            mapDownloadError(
+                'ERROR: [AmazonStore] B0BZJCFS45: Unable to extract data; please report this issue'
+            )
+        ).toBe('download.errors.extractFailed');
+    });
+
+    it('explains cookie access and Facebook parsing failures without claiming the video is private', () => {
+        const strings = require('../../src/locales/zh-CN/download.json').download.errors;
+        window.i18n.t = key => strings[key.replace('download.errors.', '')] || key;
+        const locked = mapDownloadError('ERROR: Could not copy Chrome cookie database. Permission denied');
+        expect(locked).toContain('同步 Cookie');
+        expect(locked).not.toContain('保存目录');
+        const failed = mapDownloadError('ERROR: [facebook] 1271822231658248: Cannot parse data');
+        expect(failed).toContain('发送当前视频');
+        expect(failed).toContain('只有登录后才能播放时才需要同步 Cookie');
+    });
+
+    it('maps an empty Instagram media response without claiming login is always required', () => {
+        const strings = require('../../src/locales/zh-CN/download.json').download.errors;
+        window.i18n.t = key => strings[key.replace('download.errors.', '')] || key;
+
+        const failed = mapDownloadError(
+            'ERROR: [Instagram] DQIyCFUkdfg: Instagram sent an empty media response'
+        );
+
+        expect(failed).toContain('没有返回此链接的媒体数据');
+        expect(failed).toContain('可能');
+    });
+
     it('returns i18n key when mock is identity', () => {
         window.i18n.t = (key) => key;
         expect(mapDownloadError(new Error('Private video'))).toBe('download.errors.privateVideo');

@@ -12,6 +12,10 @@
         "title": "GitHub Sponsors",
         "desc": "在 GitHub 上按月赞助，长期支持开源项目发展。"
       },
+      "bmac": {
+        "title": "Buy Me a Coffee · 请我喝杯咖啡",
+        "desc": "在 Buy Me a Coffee 上支持项目，金额随意，非常感谢。"
+      },
       "kofi": {
         "title": "Ko-fi · 请我喝杯咖啡",
         "desc": "在 Ko-fi 上一次性或月度打赏，金额随意，非常感谢。"
@@ -22,7 +26,7 @@
     "github": "GitHub 开源仓库",
     "title": "支持 MediaFlow",
     "badge_free": "永久免费",
-    "badge_opensource": "MIT 开源",
+    "badge_opensource": "Apache 2.0 开源",
     "badge_nolock": "无功能锁定",
     "promptMessage": "MediaFlow 对所有人免费开放。如果它帮到了你，可以支持一下项目 ☕",
     "promptSupport": "支持项目",

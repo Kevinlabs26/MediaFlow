@@ -72,7 +72,7 @@ function installCommonRendererMocks() {
     window.app = {
         showToast: jest.fn(),
         navigateTo: jest.fn(),
-        };
+    };
 
     window.ErrorUtils = { formatError: jest.fn(error => error?.message || String(error)) };
     window.dispatchEvent = window.dispatchEvent.bind(window);
@@ -277,6 +277,7 @@ function installAppCoreMocks() {
             this.ui = { hideAllDownloadUI: jest.fn() };
             this.videoInfo = null;
             this.playlistInfo = null;
+            this.openFolder = jest.fn();
         }
         async init() {}
         pasteAndParse() {}
@@ -564,6 +565,7 @@ describe('Renderer smoke tests', () => {
             <button id="mode-single"></button>
             <button id="mode-batch"></button>
             <button id="btn-open-extension-folder"></button>
+            <button id="btn-open-local"></button>
             <button id="btn-paste-clipboard"></button>
             <button id="btn-clear-all-queue"></button>
             <button id="batch-btn-pause-all"></button>
@@ -676,6 +678,18 @@ describe('Renderer smoke tests', () => {
         expect(app.router.currentPage).toBe('download');
         expect(app.creatorFlow).toBeDefined();
         expect(app.subtitleFlow).toBeDefined();
+    });
+
+    it('opens the download folder from the download-page shortcut', async () => {
+        require('../../src/core/Router');
+        require('../../src/core/App');
+
+        const app = new window.MediaFlowApp();
+        await withRendererGlobals(() => app.init());
+
+        document.getElementById('btn-open-local').click();
+
+        expect(app.downloadManager.openFolder).toHaveBeenCalled();
     });
 
     it('initializes DownloadFlow and registers progress listeners safely', () => {

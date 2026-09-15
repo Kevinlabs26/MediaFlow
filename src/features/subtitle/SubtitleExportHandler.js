@@ -301,8 +301,35 @@
         this.formatSelect = document.getElementById('export-format-select');
         this.typeSelect = document.getElementById('export-type-select');
         this.exportPathInput = document.getElementById('export-output-path');
+        this.enableTTS = document.getElementById('enable-tts');
 
         this.bindEvents();
+    }
+
+    isTtsEnabled() {
+        return !!(this.enableTTS?.checked ?? this.flow.enableTTS?.checked);
+    }
+
+    getExportType() {
+        const selectedType = this.typeSelect?.value || 'video_only';
+        return !this.isTtsEnabled() && selectedType !== 'video_only'
+            ? 'video_only'
+            : selectedType;
+    }
+
+    syncExportTypeAvailability() {
+        if (!this.typeSelect) return;
+
+        const ttsEnabled = this.isTtsEnabled();
+        Array.from(this.typeSelect.options || []).forEach((option) => {
+            if (option.value === 'video_audio' || option.value === 'audio_only') {
+                option.disabled = !ttsEnabled;
+            }
+        });
+
+        if (!ttsEnabled && this.typeSelect.value !== 'video_only') {
+            this.typeSelect.value = 'video_only';
+        }
     }
 
     bindEvents() {
@@ -310,6 +337,9 @@
         if (this.btnCancel) this.btnCancel.onclick = () => this.hideModal();
         if (this.btnConfirm) this.btnConfirm.onclick = () => this.handleConfirm();
         if (this.btnChangePath) this.btnChangePath.onclick = () => this.selectOutputPath();
+        if (this.enableTTS?.addEventListener) {
+            this.enableTTS.addEventListener('change', () => this.syncExportTypeAvailability());
+        }
         
         // Optional: Hide on overlay click
         if (this.modal) {
@@ -461,6 +491,8 @@
     async showModal() {
         if (!this.modal) this.init(); // Lazy init if needed
 
+        this.syncExportTypeAvailability();
+
         // Sync initial path
         let currentPath = this.flow.outputPath?.value || this.flow.preferences?.outputPath;
         
@@ -479,7 +511,7 @@
             return this.runBurnProcess(this.tracksToBurn, {
                 outputDir: currentPath,
                 format: this.formatSelect?.value || 'mp4',
-                type: this.typeSelect?.value || 'video_audio'
+                type: this.getExportType()
             });
         }
 
@@ -532,14 +564,14 @@
         }
 
         const format = this.formatSelect?.value || 'mp4';
-        const type = this.typeSelect?.value || 'video_audio';
+        const type = this.getExportType();
 
         this.hideModal();
         await this.runBurnProcess(this.tracksToBurn, { outputDir, format, type });
     }
 
     async runBurnProcess(tracksToBurn, options = {}) {
-        const { outputDir, format = 'mp4', type = 'video_audio' } = options;
+        const { outputDir, format = 'mp4', type = 'video_only' } = options;
         
         this.flow.isProcessing = true;
 
@@ -605,7 +637,7 @@
             // 濡傛灉瀵煎嚭绫诲瀷鍖呭惈闊抽锛坴ideo_audio 鎴?audio_only锛夛紝涓旂敤鎴峰紑鍚簡 TTS
             const needAudio = (type === 'video_audio' || type === 'audio_only');
             
-            if (needAudio && this.flow.ttsHandler && this.flow.enableTTS?.checked) {
+            if (needAudio && this.flow.ttsHandler && this.isTtsEnabled()) {
                 const ttsInfo = this.flow.ttsHandler.getSettings();
                 this.flow.showProgress(window.i18n.t('subtitle.messages.ttsGenerate'));
                 const mainTrack = exportTracksData.find(t => t.type === 'main');

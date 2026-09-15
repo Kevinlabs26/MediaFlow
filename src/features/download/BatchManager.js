@@ -10,6 +10,7 @@ class DownloadBatchManager {
         this.service = new window.DownloadBatchService(app);
 
         this.isProcessing = false;
+        this.isDetecting = false;
         this.savePath = null;
     }
 
@@ -38,6 +39,8 @@ class DownloadBatchManager {
     }
 
     async handleStartClick() {
+        if (this.isDetecting || this.isProcessing) return;
+
         // Old dialog method replaced by Smart Input
         // const urls = await window.mediaflow.dialog.openBatch();
 
@@ -49,9 +52,20 @@ class DownloadBatchManager {
             this.view.show();
 
             // 启动异步抓取
-            await this.service.detectUrls(this.model.queue, (item) => {
-                this.view.updateItem(item.id);
-            });
+            this.isDetecting = true;
+            this.view.elements.startBtn.disabled = true;
+            try {
+                await this.service.detectUrls(this.model.queue, (item) => {
+                    this.view.updateItem(item.id);
+                });
+                if (document.getElementById('batch-auto-download')?.checked) {
+                    await this.handleConfirmClick();
+                }
+            } finally {
+                this.isDetecting = false;
+                this.view.elements.startBtn.disabled = false;
+                this.view.updateCounts();
+            }
         } else {
             this.app.showToast(window.i18n?.t('download.errors.invalid_url') || 'Notification', 'warning');
         }
@@ -65,20 +79,37 @@ class DownloadBatchManager {
             return;
         }
 
-        // 使用默认批量下载路径
-        const downloadsPath = await window.mediaflow.app.getAppPath('downloads');
+        const downloadsPath = await this.app.downloadManager?.service?.getDownloadPath?.()
+            || await window.mediaflow.app.getAppPath('downloads');
+        if (!downloadsPath) {
+            this.app.showToast(window.i18n?.t('download.missingPath') || 'Please set download directory first', 'warning');
+            return;
+        }
 
         // 🆕 按日期分类子文件夹
         const today = new Date();
         const dateFolder = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        const batchPath = await window.mediaflow.path.join(downloadsPath, 'MediaFlow', 'Batch Downloads', dateFolder);
+        const normalizedDownloadsPath = downloadsPath.replace(/[\\/]$/, '');
+        const mediaFlowRoot = /[\\/]MediaFlow$/i.test(normalizedDownloadsPath)
+            ? normalizedDownloadsPath
+            : await window.mediaflow.path.join(normalizedDownloadsPath, 'MediaFlow');
+        const batchPath = await window.mediaflow.path.join(mediaFlowRoot, 'Batch Downloads', dateFolder);
 
         // 确保目录存在
         await window.mediaflow.fs.mkdir(batchPath);
         this.savePath = batchPath;
 
         this.isProcessing = true;
+        if (this.app.downloadManager) {
+            this.app.downloadManager.lastDownloadedFilePath = null;
+            this.app.downloadManager.lastOutputDir = this.savePath;
+        }
         this.view.updateCounts();
+
+        const batchQuality = this.model.quality || 'best';
+        const isAudio = batchQuality === 'audio';
+        const writeThumbnail = document.getElementById('batch-download-thumbnail')?.checked || false;
+        const writeSubtitles = !isAudio && (document.getElementById('batch-download-subtitles')?.checked || false);
 
         // 批量添加到全局下载队列
         for (let i = 0; i < items.length; i++) {
@@ -99,7 +130,12 @@ class DownloadBatchManager {
                 platform: item.platform,
                 thumbnail: item.thumbnail,
                 outputDir: this.savePath,
-                quality: this.model.quality || 'best'
+                quality: batchQuality,
+                audioOnly: isAudio,
+                audioFormat: 'mp3',
+                audioBitrate: '256',
+                writeThumbnail,
+                writeSubtitles
             });
         }
 

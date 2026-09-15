@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.6] - 2026-09-15
+
+### Fixed
+- Unified empty-state and export modal layouts with the dark workspace style.
+- Corrected subtitle drag positioning when the preview is zoomed.
+- Export now defaults to silent video when dubbing is disabled and omits the audio track for that mode.
+- Refreshed donation links and switched the project license to Apache 2.0.
+
 ## [2.4.5] - 2026-08-23
 
 ### Changed

@@ -99,12 +99,13 @@ async function downloadVideo(options) {
         directUrl, platform
     } = options;
 
-    // 鍏抽敭锛氬鏋滃凡缁忔湁棰勮В鏋愮殑鐩撮摼锛堟壒閲忎笅杞介€氬父宸叉瀽鍑猴級锛屼紭鍏堜娇鐢ㄧ洿閾?
-    // [Fix] TikTok 鍙婂叾 CDN 鍦板潃蹇呴』鎺掗櫎锛氬洜涓烘娴嬮樁娈佃幏鍙栫殑鐩撮摼寰€寰€甯︽按鍗帮紝蹇呴』鐢ㄥ師濮嬮〉闈㈤摼鎺ラ噸鏂拌В鏋?
+    // TikTok/Douyin browser captures may belong to related preloaded videos.
+    // Keep the page URL so the dedicated resolver can verify the exact video ID.
     const isTikTok = (platform === 'tiktok') ||
         (url && (url.includes('tiktok.com') || url.includes('tiktokcdn.com') || url.includes('byteimg.com')));
+    const isDouyin = (platform === 'douyin') || (url && douyin.isDouyinUrl(url));
 
-    if (directUrl && !isTikTok) {
+    if (directUrl && !isTikTok && !isDouyin) {
         url = directUrl;
     } else {
         url = url ? url.trim() : '';
@@ -184,7 +185,7 @@ async function downloadVideo(options) {
             const result = await douyin.downloadVideo(url, {
                 savePath,
                 title: options.title,
-                directUrl: options.directUrl, // 补全：透传已解析的直链
+                directUrl: undefined,
                 videoId: options.videoId,     // 补全：透传精确ID
                 onProgress,
                 isCancelled: () => !!activeDownloads.get(downloadId)?.cancelled
@@ -265,7 +266,7 @@ async function downloadVideo(options) {
             return result;
         } catch (error) { 
             activeDownloads.delete(downloadId);
-            return { success: false, error: error.message || String(error) }; 
+            return { success: false, error: error.error || error.message || String(error) };
         }
     }
 

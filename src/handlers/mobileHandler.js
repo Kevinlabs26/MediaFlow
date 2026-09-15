@@ -1,7 +1,7 @@
-const { BrowserWindow, app } = require('electron');
+const { BrowserWindow } = require('electron');
 const path = require('path');
-const fs = require('fs');
 const mobileFlowServer = require('../../services/server');
+const { writeCookiesFile } = require('./download/cookieUtils');
 
 let castWindow = null;
 let _getMainWindow = null;
@@ -20,22 +20,8 @@ const startMobileServer = async (port = 8765) => {
     // Cookies Received Callback
     mobileFlowServer.onCookiesReceived = (cookies) => {
         try {
-            const cookiePath = path.join(app.getPath('userData'), 'cookies.txt');
-            const cookieContent = cookies.map(c => {
-                // Netscape format: domain, include_subdomains, path, secure, expiry, name, value
-                return [
-                    c.domain,
-                    c.domain.startsWith('.') ? 'TRUE' : 'FALSE',
-                    c.path,
-                    c.secure ? 'TRUE' : 'FALSE',
-                    Math.floor(c.expirationDate || (Date.now() / 1000 + 31536000)), // Default 1 year if undefined
-                    c.name,
-                    c.value
-                ].join('\t');
-            }).join('\n');
-
-            fs.writeFileSync(cookiePath, '# Netscape HTTP Cookie File\n' + cookieContent);
-            console.log('[MobileHandler] Cookies saved to:', cookiePath);
+            const result = writeCookiesFile(cookies);
+            console.log('[MobileHandler] Cookies saved:', result.count);
 
             // Notify frontend
             const win = _getMainWindow ? _getMainWindow() : null;

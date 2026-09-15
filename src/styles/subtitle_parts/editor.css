@@ -339,6 +339,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
     transition: all 0.3s ease;
     overflow: hidden;
 }
@@ -360,6 +361,8 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+    flex: 1 1 auto;
     color: #ff6b6b;
     font-size: 13px;
     font-weight: 500;
@@ -369,9 +372,25 @@
     color: #2ecc71;
 }
 
+#page-subtitle .qc-info span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 #page-subtitle .qc-actions {
     display: flex;
-    gap: 12px;
+    flex: 0 0 auto;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+#page-subtitle .qc-actions .btn,
+#page-subtitle .qc-actions .btn-icon {
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
 
 /* Subtitle Item QC Decorations */

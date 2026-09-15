@@ -173,6 +173,7 @@ describe('DownloadBatchUIManager list actions', () => {
 
     afterEach(() => {
         delete window.DownloadBatchUIManager;
+        delete window.mapDownloadError;
         document.body.innerHTML = '';
     });
 
@@ -225,6 +226,23 @@ describe('DownloadBatchUIManager list actions', () => {
 
         expect(controller.toggleItem).toHaveBeenCalledWith('item-1');
         expect(controller.removeItem).toHaveBeenCalledWith('item-1');
+    });
+
+    maybeTest('shows the mapped failure instead of the stale detecting title', () => {
+        window.mapDownloadError = jest.fn(() => 'Instagram 没有返回媒体数据');
+        const ui = new window.DownloadBatchUIManager({});
+
+        const html = ui.createItemHTML({
+            id: 'instagram-1',
+            selected: true,
+            status: 'error',
+            title: '正在检测...',
+            error: 'ERROR: [Instagram] DQIyCFUkdfg: Instagram sent an empty media response',
+            url: 'https://www.instagram.com/reel/DQIyCFUkdfg/'
+        });
+
+        expect(html).toContain('Instagram 没有返回媒体数据');
+        expect(html).not.toContain('正在检测...');
     });
 });
 

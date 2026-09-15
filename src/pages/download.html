@@ -108,7 +108,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                         </svg>
-                        <span data-i18n="download.openFile">打开本地文件</span>
+                        <span data-i18n="download.openFolder">打开下载文件夹</span>
                     </button>
                 </div>
             </div>
@@ -163,8 +163,10 @@
 
             <div id="batch-empty-tip" class="batch-empty-tip">
                 <div class="tip-icon">📋</div>
-                <div class="tip-text" data-i18n="batch.emptyTip">按 <strong>Ctrl+V</strong> 粘贴链接<br><span
-                        style="font-size: 0.8em; opacity: 0.7;" data-i18n="batch.emptySub">自动识别多行文本</span></div>
+                <div class="tip-text">
+                    <span data-i18n="batch.emptyTip">按 Ctrl+V 粘贴链接</span><br>
+                    <span style="font-size: 0.8em; opacity: 0.7;" data-i18n="batch.emptySub">自动识别多行文本</span>
+                </div>
             </div>
 
             <!-- 🆕 清空输入按钮 -->
@@ -204,11 +206,6 @@
                         <input type="checkbox" id="batch-auto-download">
                         <span class="batch-toggle-slider"></span>
                         <span data-i18n="batch.autoDownload">解析后自动下载</span>
-                    </label>
-                    <label class="batch-toggle">
-                        <input type="checkbox" id="batch-no-watermark" checked>
-                        <span class="batch-toggle-slider"></span>
-                        <span data-i18n="batch.noWatermark">去水印 (TikTok/抖音)</span>
                     </label>
                 </div>
             </div>
@@ -341,13 +338,13 @@
                 <span class="progress-eta" id="progress-eta"></span>
             </div>
             <div class="progress-controls" style="display: flex; gap: 8px;">
-                <button id="btn-pause" class="btn btn-secondary" data-i18n="download.pause">
+                <button id="btn-pause" class="btn btn-secondary">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                         <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                     </svg>
                     <span data-i18n="download.pause">暂停</span>
                 </button>
-                <button id="btn-cancel" class="btn btn-secondary" data-i18n="download.cancel">
+                <button id="btn-cancel" class="btn btn-secondary">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 6L6 18M6 6l12 12" />
                     </svg>

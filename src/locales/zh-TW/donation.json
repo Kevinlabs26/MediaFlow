@@ -12,6 +12,10 @@
         "title": "GitHub Sponsors",
         "desc": "在 GitHub 上按月贊助，長期支持開源專案發展。"
       },
+      "bmac": {
+        "title": "Buy Me a Coffee · 請我喝杯咖啡",
+        "desc": "在 Buy Me a Coffee 上支持專案，金額隨意，非常感謝。"
+      },
       "kofi": {
         "title": "Ko-fi · 請我喝杯咖啡",
         "desc": "在 Ko-fi 上一次性或月度打賞，金額隨意，非常感謝。"
@@ -22,7 +26,7 @@
     "github": "GitHub 開源倉庫",
     "title": "支持 MediaFlow",
     "badge_free": "永久免費",
-    "badge_opensource": "MIT 開源",
+    "badge_opensource": "Apache 2.0 開源",
     "badge_nolock": "無功能鎖定",
     "scan": "手機掃碼捐贈"
   }

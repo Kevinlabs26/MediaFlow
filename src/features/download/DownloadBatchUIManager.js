@@ -86,6 +86,9 @@ class DownloadBatchUIManager {
         const isPending = item.status === 'pending';
         const statusIcon = this.getStatusIcon(item.status);
         const statusClass = item.status === 'error' ? 'item-error' : (isPending ? 'item-pending' : '');
+        const displayTitle = item.status === 'error' && item.error
+            ? (window.mapDownloadError?.(item.error) || item.error)
+            : item.title;
 
         // 🆕 Pending 状态使用骨架屏动画
         const thumbContent = isPending
@@ -96,7 +99,7 @@ class DownloadBatchUIManager {
 
         const titleContent = isPending
             ? '<div class="skeleton skeleton-text" style="width: 70%; height: 16px;"></div>'
-            : `<div class="item-title text-truncate">${esc(item.title)}</div>`;
+            : `<div class="item-title text-truncate" title="${esc(displayTitle)}">${esc(displayTitle)}</div>`;
 
         const safeId = esc(item.id);
 

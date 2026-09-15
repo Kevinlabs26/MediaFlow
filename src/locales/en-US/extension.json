@@ -25,7 +25,7 @@
     "purpose4Title": "Cookie sync",
     "tipsTitle": "Tips",
     "tip1": "Keep the desktop app open before sending, or the extension cannot deliver jobs.",
-    "tip2": "Cookie sync needs the desktop LAN/Mobile helper (port 8765).",
+    "tip2": "Cookie sync requires the MediaFlow desktop app to be running.",
     "tip3": "Some sites work better if you log in first, then sync cookies.",
     "f1Title": "Resolve & send URL",
     "f1Desc": "Detect the current page video address and send it to the desktop Media Download queue.",

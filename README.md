@@ -11,7 +11,7 @@
 <p align="center"><a href="https://mediaflowing.com/">Visit the official website</a></p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT license"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" alt="Apache 2.0 license"></a>
   <img src="https://img.shields.io/badge/Platform-Windows-lightgrey.svg" alt="Windows">
 </p>
 
@@ -71,7 +71,7 @@ npm run build:win
 
 This repository contains the open-source MediaFlow desktop application only.
 
-The official website and the optional browser extension are separate proprietary components. Their source code is not included here and is not covered by this repository's MIT license. The desktop app may include integration points for those services, but those integrations do not make the private components open source.
+The official website and the optional browser extension are separate proprietary components. Their source code is not included here and is not covered by this repository's Apache 2.0 license. The desktop app may include integration points for those services, but those integrations do not make the private components open source.
 
 ## Third-party components
 
@@ -90,6 +90,6 @@ Issues and pull requests are welcome. Please do not include cookies, private cre
 
 ## License
 
-MediaFlow is released under the [MIT License](LICENSE).
+MediaFlow is released under the [Apache License 2.0](LICENSE).
 
 The software is provided without warranty. Use it responsibly and comply with the terms of service and copyright laws that apply to the content and platforms you use.

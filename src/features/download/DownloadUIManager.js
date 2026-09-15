@@ -193,6 +193,7 @@ class DownloadUIManager {
      * 显示错误状态卡片
      */
     showErrorState(message) {
+        this.clearErrorResetTimer();
         this.hideSkeleton();
         const infoDiv = this.elements.videoInfo;
         if (!infoDiv) return;
@@ -222,17 +223,27 @@ class DownloadUIManager {
         infoDiv.querySelector('[data-action="focus-download-url"]')?.addEventListener('click', () => {
             const input = this.elements.urlInput || document.getElementById('video-url');
             input?.focus?.();
+            if (input?.value?.trim()) this.manager.checkVideo();
         });
 
-        setTimeout(() => {
+        this._errorResetTimer = setTimeout(() => {
+            this._errorResetTimer = null;
             this.hideAllDownloadUI();
         }, 3000);
+    }
+
+    clearErrorResetTimer() {
+        if (this._errorResetTimer) {
+            clearTimeout(this._errorResetTimer);
+            this._errorResetTimer = null;
+        }
     }
 
     /**
      * 隐藏所有下载相关的 UI（重置时调用）
      */
     hideAllDownloadUI() {
+        this.clearErrorResetTimer();
         // 隐藏骨架屏
         const overlay = this.elements.videoInfo?.querySelector('.video-info-skeleton');
         if (overlay) overlay.classList.add('hidden');
@@ -323,6 +334,7 @@ class DownloadUIManager {
     }
 
     resetUI() {
+        this.clearErrorResetTimer();
         this.hideSkeleton(); // Hide skeleton on reset
         const e = this.elements;
         e.videoInfo?.classList.add('hidden');

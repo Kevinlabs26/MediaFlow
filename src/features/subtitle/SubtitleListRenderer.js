@@ -434,6 +434,7 @@ class SubtitleListRenderer {
         };
 
         const hasVideo = !!(this.editor?.flow?.videoFile || this.editor?.flow?.videoPlayer?.src);
+        const showGuidedHeader = !(isTrulyEmpty && hasVideo);
 
         let title;
         let hint;
@@ -528,11 +529,13 @@ class SubtitleListRenderer {
 
         this.listContent.innerHTML = `
             <div class="empty-state-guided">
-                <div class="empty-state-icon-wrap" aria-hidden="true">
-                    <i class="fa-solid fa-closed-captioning"></i>
-                </div>
-                <p class="empty-state-title">${this.escapeHtml(title)}</p>
-                <p class="empty-state-hint">${this.escapeHtml(hint)}</p>
+                ${showGuidedHeader ? `
+                    <div class="empty-state-icon-wrap" aria-hidden="true">
+                        <i class="fa-solid fa-closed-captioning"></i>
+                    </div>
+                    <p class="empty-state-title">${this.escapeHtml(title)}</p>
+                    <p class="empty-state-hint">${this.escapeHtml(hint)}</p>
+                ` : ''}
                 ${actionsHtml}
             </div>`;
 

@@ -98,4 +98,61 @@ describe('DownloadManager progress listener isolation', () => {
             speedMonitor
         );
     });
+
+    test('single-link checks always leave batch mode before rendering', async () => {
+        const app = {
+            showToast: jest.fn(),
+            router: { switchMode: jest.fn() },
+            queueManager: null
+        };
+        const manager = new window.DownloadFlow(app);
+        manager.ui.elements = {
+            urlInput: { value: 'https://example.com/video/1' },
+            btnCheck: { disabled: false, innerHTML: '' }
+        };
+        manager.ui.showSkeleton = jest.fn();
+        manager.ui.renderVideoInfo = jest.fn();
+        manager.service.extractUrlFromText = jest.fn((value) => value);
+        manager.service.isValidUrl = jest.fn(() => true);
+        manager.service.getInfo = jest.fn(() => Promise.resolve({ success: true, title: 'Video' }));
+
+        await manager.checkVideo();
+
+        expect(app.router.switchMode).toHaveBeenCalledWith('single');
+        expect(manager.ui.renderVideoInfo).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+
+    test('does not render a completed single-link check after switching to batch mode', async () => {
+        let resolveInfo;
+        const infoPromise = new Promise(resolve => { resolveInfo = resolve; });
+        const app = {
+            mode: 'single',
+            showToast: jest.fn(),
+            router: {
+                switchMode: jest.fn(mode => { app.mode = mode; })
+            },
+            queueManager: null
+        };
+        const manager = new window.DownloadFlow(app);
+        manager.ui.elements = {
+            urlInput: { value: 'https://example.com/video/1' },
+            btnCheck: { disabled: false, innerHTML: '' }
+        };
+        manager.ui.showSkeleton = jest.fn();
+        manager.ui.renderVideoInfo = jest.fn();
+        manager.ui.showErrorState = jest.fn();
+        manager.service.extractUrlFromText = jest.fn(value => value);
+        manager.service.isValidUrl = jest.fn(() => true);
+        manager.service.getInfo = jest.fn(() => infoPromise);
+
+        const check = manager.checkVideo();
+        await Promise.resolve();
+        app.mode = 'batch';
+        resolveInfo({ success: true, title: 'Late video' });
+        await check;
+
+        expect(manager.videoInfo).toBeNull();
+        expect(manager.ui.renderVideoInfo).not.toHaveBeenCalled();
+        expect(manager.ui.showErrorState).not.toHaveBeenCalled();
+    });
 });

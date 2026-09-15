@@ -84,16 +84,21 @@ class DownloadActionHandler {
         }
     }
 
-    openFolder() {
+    async openFolder() {
         console.log('[DownloadActionHandler] openFolder called');
-        const targetPath = this.manager.lastDownloadedFilePath || this.manager.lastOutputDir;
-        if (targetPath) {
-            console.log('[DownloadActionHandler] Requesting showItemInFolder for:', targetPath);
-            window.mediaflow.shell.showItemInFolder(targetPath);
-        } else {
-            console.warn('[DownloadActionHandler] No path available for openFolder');
-            this.app.showToast(window.i18n?.t('download.filePathNotFound') || 'Cannot find file path', 'warning');
+        if (this.manager.lastDownloadedFilePath) {
+            window.mediaflow.shell.showItemInFolder(this.manager.lastDownloadedFilePath);
+            return;
         }
+
+        const folderPath = this.manager.lastOutputDir || await this.service.getSingleDownloadDir?.();
+        if (folderPath) {
+            await window.mediaflow.fs?.mkdir?.(folderPath);
+            return window.mediaflow.shell.openPath(folderPath);
+        }
+
+        console.warn('[DownloadActionHandler] No path available for openFolder');
+        this.app.showToast(window.i18n?.t('download.filePathNotFound') || 'Cannot find file path', 'warning');
     }
 
     addToQueue() {

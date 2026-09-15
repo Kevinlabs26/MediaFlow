@@ -80,6 +80,9 @@ class DownloadBatchService {
                     selected: true
                 }));
                 queue.splice(index + 1, 0, ...newItems);
+                // The original item update is not enough after expanding a
+                // playlist; notify the view about inserted rows as well.
+                newItems.forEach(onUpdate);
             } else {
                 throw new Error((typeof window !== 'undefined' && window.i18n?.t?.('download.parseListFailed')) || 'Failed to parse list');
             }
@@ -130,9 +133,9 @@ class DownloadBatchService {
                 item.status = 'error';
                 item.error = info.error || 'Operation failed';
             }
-        } catch {
+        } catch (error) {
             item.status = 'error';
-            item.error = '连接解析失败';
+            item.error = error?.message || '连接解析失败';
         }
         onUpdate(item);
     }

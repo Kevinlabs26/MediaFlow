@@ -141,4 +141,28 @@ describe('SubtitlePreviewHandler karaoke preview', () => {
         expect(overlay.textContent).toContain('He makes up for small sheep in the sea');
         expect(overlay.textContent).not.toContain('the lack of');
     });
+
+    it('converts screen drag distance into overlay coordinates when preview is zoomed', () => {
+        const handler = new window.SubtitlePreviewHandler({ flow: {} });
+        const overlay = document.createElement('div');
+        Object.defineProperty(overlay, 'clientWidth', { value: 400 });
+        Object.defineProperty(overlay, 'clientHeight', { value: 300 });
+        overlay.getBoundingClientRect = () => ({ left: 100, top: 50, width: 800, height: 600 });
+        handler.subtitleOverlay = overlay;
+        handler._isInlineEditing = true;
+
+        const box = document.createElement('div');
+        box.style.left = '10px';
+        box.style.top = '20px';
+        overlay.appendChild(box);
+        handler._bindBoxDrag(box, null);
+
+        box.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: 200, clientY: 150 }));
+        document.dispatchEvent(new MouseEvent('mousemove', { clientX: 240, clientY: 210 }));
+
+        expect(box.style.left).toBe('30px');
+        expect(box.style.top).toBe('50px');
+
+        document.dispatchEvent(new MouseEvent('mouseup', { clientX: 240, clientY: 210 }));
+    });
 });

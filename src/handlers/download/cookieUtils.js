@@ -16,7 +16,8 @@ function getCookiesPath() {
 }
 
 /**
- * 若存在 cookies.txt，则向 yt-dlp 参数数组追加 --cookies <path>
+ * Only use cookies explicitly synced to MediaFlow. Reading a live Chrome
+ * database on Windows can fail before any network request is made.
  * 用于平台专用下载服务（tiktok/instagram/facebook 2026 年起普遍需要 Cookie）
  * @param {string[]} args - yt-dlp 参数数组
  * @returns {string[]}
@@ -29,4 +30,33 @@ function appendCookiesArg(args = []) {
     return args;
 }
 
-module.exports = { getCookiesPath, appendCookiesArg };
+/**
+ * Write cookies received from the companion extension in Netscape format.
+ * @param {Array<Object>} cookies
+ * @returns {{ path: string, count: number }}
+ */
+function writeCookiesFile(cookies) {
+    if (!Array.isArray(cookies) || cookies.length === 0) {
+        throw new Error('No cookies received');
+    }
+
+    const rows = cookies
+        .filter(cookie => cookie && cookie.name && cookie.value !== undefined)
+        .map(cookie => [
+            cookie.domain || '',
+            cookie.domain?.startsWith('.') ? 'TRUE' : 'FALSE',
+            cookie.path || '/',
+            cookie.secure ? 'TRUE' : 'FALSE',
+            Math.floor(cookie.expirationDate || (Date.now() / 1000 + 31536000)),
+            cookie.name,
+            cookie.value
+        ].join('\t'));
+
+    if (rows.length === 0) throw new Error('No valid cookies received');
+
+    const cookiePath = path.join(app.getPath('userData'), 'cookies.txt');
+    fs.writeFileSync(cookiePath, '# Netscape HTTP Cookie File\n' + rows.join('\n') + '\n', 'utf8');
+    return { path: cookiePath, count: rows.length };
+}
+
+module.exports = { getCookiesPath, appendCookiesArg, writeCookiesFile };

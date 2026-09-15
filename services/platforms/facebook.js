@@ -4,9 +4,9 @@
  */
 
 const { spawn } = require('child_process');
-const path = require('path');
 const { getYtDlpPath } = require('../../src/utils/binaries');
 const { appendCookiesArg } = require('../../src/handlers/download/cookieUtils');
+const { getProxyUrl } = require('../../src/handlers/download/proxyUtils');
 
 /**
  * Facebook 下载配置
@@ -31,15 +31,26 @@ function getVideoInfo(url) {
         const args = [
             '--dump-json',
             '--no-warnings',
+            '--no-playlist',
             '--user-agent', FACEBOOK_CONFIG.userAgent
         ];
-        // Facebook 2026 年起通常需要浏览器 Cookie
+        // Use cookies only when the user explicitly synced them from the browser.
         appendCookiesArg(args);
-        args.push(url);
+        const proxy = getProxyUrl();
+        if (proxy) args.push('--proxy', proxy);
+        args.push('--', url);
 
-        const process = spawn(getYtDlpPath(), args);
+        const process = spawn(getYtDlpPath(), args, { windowsHide: true });
         let stdout = '';
         let stderr = '';
+        const timer = setTimeout(() => {
+            process.kill();
+            reject({ success: false, error: 'Facebook video info timed out (30s)' });
+        }, 30000);
+        process.on('error', (error) => {
+            clearTimeout(timer);
+            reject({ success: false, error: 'Failed to start yt-dlp: ' + error.message });
+        });
 
         process.stdout.on('data', (data) => {
             stdout += data.toString();
@@ -50,6 +61,7 @@ function getVideoInfo(url) {
         });
 
         process.on('close', (code) => {
+            clearTimeout(timer);
             if (code === 0) {
                 try {
                     const info = JSON.parse(stdout);
@@ -174,13 +186,19 @@ function downloadVideo(url, options = {}) {
             args.push('--convert-thumbnails', 'jpg');
         }
 
-        // Facebook 2026 年起通常需要浏览器 Cookie
+        // Use cookies only when the user explicitly synced them from the browser.
         appendCookiesArg(args);
+        const proxy = getProxyUrl();
+        if (proxy) args.push('--proxy', proxy);
 
-        args.push(url);
+        args.push('--', url);
 
-        const downloadProcess = spawn(getYtDlpPath(), args);
+        const downloadProcess = spawn(getYtDlpPath(), args, { windowsHide: true });
         let lastProgress = 0;
+        let stderr = '';
+        downloadProcess.on('error', (error) => {
+            reject({ success: false, error: 'Failed to start yt-dlp: ' + error.message });
+        });
 
         downloadProcess.stdout.on('data', (data) => {
             const output = data.toString();
@@ -195,6 +213,7 @@ function downloadVideo(url, options = {}) {
         });
 
         downloadProcess.stderr.on('data', (data) => {
+            stderr += data.toString();
             console.log('[Facebook] stderr:', data.toString());
         });
 
@@ -202,7 +221,7 @@ function downloadVideo(url, options = {}) {
             if (code === 0) {
                 resolve({ success: true, path: savePath });
             } else {
-                reject({ success: false, error: 'Facebook download failed' });
+                reject({ success: false, error: stderr || 'Facebook download failed' });
             }
         });
     });

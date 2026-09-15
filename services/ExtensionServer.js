@@ -1,5 +1,6 @@
 const http = require('http');
 const Store = require('electron-store');
+const { writeCookiesFile } = require('../src/handlers/download/cookieUtils');
 
 const store = new Store();
 
@@ -72,6 +73,9 @@ class ExtensionServer {
                     const ok = this._sendToRenderer({
                         type: 'download',
                         url: videoUrl.trim(),
+                        directUrl: typeof body.directUrl === 'string' && /^https?:\/\//i.test(body.directUrl)
+                            ? body.directUrl.trim()
+                            : undefined,
                         autoDownload: true,
                         source: 'extension'
                     });
@@ -121,6 +125,15 @@ class ExtensionServer {
                             error: ok ? undefined : 'Desktop window not ready'
                         }
                     };
+                });
+            }
+
+            // Cookie sync uses the localhost-only extension service; it does
+            // not require the optional LAN/Mobile service on port 8765.
+            if (req.method === 'POST' && urlPath === '/api/sync-cookies') {
+                return this._handleJsonPost(req, res, (body) => {
+                    const result = writeCookiesFile(body && body.cookies);
+                    return { status: 200, data: { success: true, count: result.count } };
                 });
             }
 

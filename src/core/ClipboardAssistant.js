@@ -23,7 +23,7 @@ class ClipboardAssistant {
             if (urls.length === 0) return;
 
             const singleInput = document.getElementById('video-url');
-            const batchInput = document.getElementById('batch-urls');
+            const batchInput = document.getElementById('batch-smart-input');
 
             if (urls.length === 1 && singleInput && !singleInput.value.trim()) {
                 this.app.router.switchMode('single');
@@ -34,8 +34,7 @@ class ClipboardAssistant {
                 setTimeout(() => document.getElementById('btn-check')?.click(), 500);
             } else if (urls.length > 1 && batchInput && !batchInput.value.trim()) {
                 this.app.router.switchMode('batch');
-                batchInput.value = urls.join('\n');
-                batchInput.dispatchEvent(new Event('input'));
+                window.batchManager?.inputManager?.processInput(urls.join('\n'));
                 this._lastPastedContent = text;
                 this.app.showToast(window.i18n?.t('download.multiUrlDetected') || `Detected ${urls.length} links, switched to batch mode`, 'success');
             }

@@ -305,6 +305,14 @@ class MediaFlowApp {
                     window.batchManager.inputManager.processInput(text);
                     this.showToast(window.i18n?.t('download.pasteSuccess') || 'Notification', 'success');
                 } else {
+                    const pastedUrls = window.downloadFlow?.service?.extractUrlsFromText?.(text) || [];
+                    if (pastedUrls.length > 1 && window.batchManager?.inputManager) {
+                        this.router.switchMode('batch');
+                        window.batchManager.inputManager.processInput(pastedUrls.join('\n'));
+                        this.showToast(window.i18n?.t('download.multiUrlDetected') || 'Multiple links detected', 'success');
+                        return;
+                    }
+
                     // 单视频模式：粘贴到 URL 输入框
                     const urlInput = document.getElementById('video-url');
                     if (urlInput) {
@@ -332,7 +340,7 @@ class MediaFlowApp {
 
         // 🆕 队列控制按钮
         document.getElementById('btn-open-local')?.addEventListener('click', () => {
-            this.switchPage('creator');
+            this.downloadManager?.openFolder?.();
         });
 
         document.getElementById('btn-clear-all-queue')?.addEventListener('click', () => {

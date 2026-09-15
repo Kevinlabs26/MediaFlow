@@ -58,11 +58,11 @@ if (typeof window !== 'undefined') {
                 try {
                     if (!silent) {
                         this.app.router.switchMode('single');
-                        this.app.router.navigateTo('download', { url: data.url });
+                        this.app.router.navigateTo('download', { url: data.url, directUrl: data.directUrl });
                     } else {
                         // Still switch route quietly so checkVideo UI elements exist
                         this.app.router.switchMode?.('single');
-                        this.app.router.navigateTo?.('download', { url: data.url });
+                        this.app.router.navigateTo?.('download', { url: data.url, directUrl: data.directUrl });
                     }
                 } catch (e) {
                     console.warn('[Protocol] navigate failed:', e);
@@ -83,7 +83,8 @@ if (typeof window !== 'undefined') {
                             if (this.app.downloadManager) {
                                 this.app.downloadManager.checkVideo?.({
                                     autoStart,
-                                    source
+                                    source,
+                                    directUrl: data.directUrl
                                 });
                             }
                             console.log(`[Protocol] Auto-pasted successfully after ${delay}ms autoStart=${autoStart}`);
@@ -175,7 +176,11 @@ if (typeof window !== 'undefined') {
             case 'download':
                 if (params.url) {
                     // URLSearchParams already decodes once — do not double-decode
-                    win.webContents.send('protocol:action', { type: 'download', url: params.url });
+                    win.webContents.send('protocol:action', {
+                        type: 'download',
+                        url: params.url,
+                        directUrl: params.directUrl
+                    });
                 }
                 break;
             case 'batch':

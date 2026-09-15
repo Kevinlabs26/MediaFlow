@@ -176,7 +176,8 @@ class Router {
      * 切换下载模式 (Single/Batch)
      * @returns {Promise<void>}
      */
-    async switchMode(mode) {
+    async switchMode(mode, options = {}) {
+        if (!options.preserveCheck) this.app.downloadManager?.invalidateCheck?.();
         this.app.mode = mode;
         const singleArea = document.getElementById('single-input-area');
         const batchArea = document.getElementById('batch-input-area');
