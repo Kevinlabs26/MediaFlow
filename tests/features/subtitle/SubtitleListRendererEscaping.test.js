@@ -65,4 +65,29 @@ describe('SubtitleListRenderer text escaping', () => {
         expect(element.querySelector('svg')).toBeNull();
         expect(element.querySelector('.qc-tag').textContent).toContain('too long <img src=x');
     });
+
+    test('preserves multiline text and allows Shift+Enter while blocking plain Enter', () => {
+        const editor = {
+            viewMode: 'full',
+            showOriginal: true,
+            showTranslation: true,
+            showTtsSourceSelector: false,
+            activeSubtitleIndex: -1,
+            loopingSubtitleIndex: -1,
+            flow: { trackManager: { tracks: [] }, qualityHandler: { getErrorsByIndex: jest.fn(() => []) } },
+            getOriginalText: jest.fn((sub) => sub.originalText),
+            getTranslatedText: jest.fn((sub) => sub.translatedText),
+            setActive: jest.fn(),
+            updateSubtitleText: jest.fn(),
+            addToHistory: jest.fn()
+        };
+        const renderer = new window.SubtitleListRenderer(editor);
+        renderer.subtitles = [{ originalText: 'first\nsecond', translatedText: '' }];
+        const element = renderer.createSubtitleElement(renderer.subtitles[0], 0);
+        const textarea = element.querySelector('.original-text');
+
+        expect(textarea.value).toBe('first\nsecond');
+        expect(textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, cancelable: true }))).toBe(true);
+        expect(textarea.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }))).toBe(false);
+    });
 });

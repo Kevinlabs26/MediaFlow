@@ -319,7 +319,7 @@ function setupTTSHandlers(ipcMain) {
             // Parallelism optional but recommended. Limit concurrency?
             // For now specific sequential to avoid rate limits or CPU issues? edge-tts is binary, sequential is safer.
             let isCancelled = false;
-            const python = await demucsHandler.findPython();
+            const python = await edgeHandler.findEdgePython();
             const stopHandler = () => {
                 isCancelled = true;
                 console.log('[TTS] Cancellation signal received');

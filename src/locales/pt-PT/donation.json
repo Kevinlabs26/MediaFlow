@@ -28,6 +28,14 @@
     "badge_free": "Free forever",
     "badge_opensource": "Licença Apache 2.0",
     "badge_nolock": "No locked features",
-    "scan": "Digitalize com o telemóvel"
+    "scan": "Digitalize com o telemóvel",
+    "updateWelcome": {
+      "title": "Bem-vindo ao MediaFlow",
+      "versionMessage": "Atualizado para v{version}. Obrigado pelo seu apoio.",
+      "methodsLabel": "Formas de apoiar",
+      "qrAlt": "Código QR de apoio",
+      "open": "Abrir página de apoio",
+      "done": "Começar"
+    }
   }
 }

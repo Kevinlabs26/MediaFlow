@@ -318,7 +318,7 @@ class SubtitleUIInject extends window.SubtitleUIBase {
         if (processedLines.length === 0) return false;
 
         // 记录历史
-        if (this.flow.editor) this.flow.editor.addToHistory();
+        this.flow.editor?.ensureHistoryBaseline?.();
 
         const newItems = [];
         let currentTime = 0;

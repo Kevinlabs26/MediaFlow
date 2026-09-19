@@ -392,6 +392,7 @@
       "cancelBtn": "취소",
       "changePath": "변경",
       "typeVideoAudio": "비디오 + AI 음성",
+      "typeVideoOriginal": "비디오 + 원본 오디오 + 자막",
       "typeVideoOnly": "비디오만 (음소거)",
       "typeAudioOnly": "오디오만 (MP3)",
       "precheck_title": "굽기 전 검사 ({{count}}줄)",

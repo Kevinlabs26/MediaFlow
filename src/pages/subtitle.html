@@ -264,10 +264,6 @@
                             </div>
                             <div id="subtitle-list-container" class="subtitle-list-container editor-scroll-pro">
                                 <!-- 由 SubtitleListRenderer 动态渲染 -->
-                                <div class="empty-state">
-                                    <i class="fa-solid fa-closed-captioning"></i>
-                                    <p data-i18n="subtitle.editor.empty">暂无内容</p>
-                                </div>
                             </div>
                         </div>
                         <div class="layout-resizer horizontal list-resizer" id="list-resizer"
@@ -780,12 +776,12 @@
                                 </div>
                                 <div class="ctrl-row-pro">
                                     <span class="ctrl-label" data-i18n="subtitle.style.margin_h">水平位置</span>
-                                    <input type="range" id="margin-h" min="0" max="100" value="50" class="pro-slider">
+                                    <input type="range" id="margin-h" min="0" max="100" step="0.1" value="50" class="pro-slider">
                                     <div class="value-badge" id="margin-h-value">50</div>
                                 </div>
                                 <div class="ctrl-row-pro">
                                     <span class="ctrl-label" data-i18n="subtitle.style.margin_v">垂直位置</span>
-                                    <input type="range" id="margin-v" min="0" max="100" value="8" class="pro-slider">
+                                    <input type="range" id="margin-v" min="0" max="100" step="0.1" value="8" class="pro-slider">
                                     <div class="value-badge" id="margin-v-value">8</div>
                                 </div>
                                 <div class="ctrl-row-pro">
@@ -1048,6 +1044,7 @@
                             <label class="export-label" data-i18n="subtitle.export.type">内容类型</label>
                             <div class="custom-select-wrapper">
                                 <select class="premium-select" id="export-type-select">
+                                    <option value="video_original" data-i18n="subtitle.export.typeVideoOriginal">视频 + 原声 + 字幕</option>
                                     <option value="video_audio" data-i18n="subtitle.export.typeVideoAudio">视频 + AI 配音</option>
                                     <option value="video_only" data-i18n="subtitle.export.typeVideoOnly">仅视频和字幕</option>
                                     <option value="audio_only" data-i18n="subtitle.export.typeAudioOnly">仅导出 MP3</option>

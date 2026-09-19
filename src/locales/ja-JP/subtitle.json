@@ -392,6 +392,7 @@
       "cancelBtn": "キャンセル",
       "changePath": "変更",
       "typeVideoAudio": "動画 + AI音声",
+      "typeVideoOriginal": "動画 + 元音声 + 字幕",
       "typeVideoOnly": "動画のみ (ミュート)",
       "typeAudioOnly": "オーディオのみ (MP3)",
       "precheck_title": "焼き込み前チェック（{{count}} 行）",

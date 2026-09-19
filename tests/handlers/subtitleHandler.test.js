@@ -152,4 +152,27 @@ describe('subtitleHandler source segment burn path', () => {
         expect(ffmpegArgs).not.toEqual(expect.arrayContaining(['-map', '0:a?']));
         expect(ffmpegArgs).not.toEqual(expect.arrayContaining(['-c:a', 'copy']));
     });
+
+    test('subtitle:burn keeps original audio for text subtitles without dubbing', async () => {
+        const sender = { send: jest.fn() };
+        const params = {
+            videoPath: 'C:/video/input.mp4',
+            duration: 4,
+            exportType: 'video_original',
+            tracks: [{
+                id: 'main',
+                type: 'main',
+                style: {},
+                subtitles: [{ id: 'sub-1', start: 0.2, end: 1.4, text: 'Hello' }]
+            }],
+            width: 1280,
+            height: 720,
+            outputPath: 'C:/out/subtitled.mp4'
+        };
+
+        await handlers['subtitle:burn']({ sender }, params);
+
+        const ffmpegArgs = mockSpawn.mock.calls[0][1];
+        expect(ffmpegArgs).toEqual(expect.arrayContaining(['-map', '0:a?', '-c:a', 'copy']));
+    });
 });

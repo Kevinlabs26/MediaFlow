@@ -58,4 +58,16 @@ describe('EdgeTTSHandler', () => {
 
         expect(runProcess).toHaveBeenCalledTimes(1);
     });
+
+    test('rejects a fallback Python that does not contain edge_tts', async () => {
+        jest.restoreAllMocks();
+        jest.spyOn(handler, 'getPythonCandidates').mockReturnValue([]);
+        jest.spyOn(handler, 'runProcess').mockResolvedValue({
+            code: 1,
+            stdout: '',
+            stderr: "ModuleNotFoundError: No module named 'edge_tts'"
+        });
+
+        await expect(handler.findEdgePython()).rejects.toThrow('Edge TTS dependency is missing');
+    });
 });

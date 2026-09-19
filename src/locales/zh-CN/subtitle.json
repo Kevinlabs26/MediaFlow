@@ -416,6 +416,7 @@
       "cancelBtn": "取消",
       "changePath": "更改",
       "typeVideoAudio": "视频 + AI 配音",
+      "typeVideoOriginal": "视频 + 原声 + 字幕",
       "typeVideoOnly": "仅视频 (静音)",
       "typeAudioOnly": "仅音频 (MP3)"
     },

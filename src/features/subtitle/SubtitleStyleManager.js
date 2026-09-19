@@ -356,8 +356,18 @@ class SubtitleStyleManager {
         this.flow.currentStyle = this.currentStyle;
     }
 
+    scheduleStyleHistoryCommit() {
+        const editor = this.flow?.editor;
+        if (!editor) return;
+        editor.markHistoryDirty?.();
+        this.flow.triggerAutoSave?.();
+        clearTimeout(this._styleHistoryTimer);
+        this._styleHistoryTimer = setTimeout(() => editor.addToHistory?.(), 250);
+    }
+
     updateStyle(updates) {
         if (!this.currentStyle) return;
+        this.flow?.editor?.ensureHistoryBaseline?.();
         this.currentStyle = this.cloneStyle(this.currentStyle);
 
         // 确保 strokes 基础结构存在，并同步旧字段
@@ -385,6 +395,7 @@ class SubtitleStyleManager {
         }
 
         this.updateSubtitlePreview();
+        this.scheduleStyleHistoryCommit();
     }
 
     bindStyleInputs() {
@@ -421,7 +432,7 @@ class SubtitleStyleManager {
                     return;
                 }
 
-                if (type === 'number') val = parseInt(val);
+                if (type === 'number') val = Number.parseFloat(val);
 
                 if (el.type === 'color') updateColorPickerBG(el, val);
 
@@ -437,6 +448,7 @@ class SubtitleStyleManager {
         if (this.outlineColor) {
             updateColorPickerBG(this.outlineColor, this.outlineColor.value);
             this.outlineColor.addEventListener('input', (e) => {
+                this.flow?.editor?.ensureHistoryBaseline?.();
                 const val = e.target.value;
                 updateColorPickerBG(this.outlineColor, val);
                 if (!this.currentStyle.strokes) this.currentStyle.strokes = [];
@@ -445,10 +457,12 @@ class SubtitleStyleManager {
                 this.syncCurrentStyleToTrack();
                 this.updateSubtitlePreview();
                 this.saveCurrentStylePreference();
+                this.scheduleStyleHistoryCommit();
             });
         }
         if (this.outlineWidth) {
             this.outlineWidth.addEventListener('input', (e) => {
+                this.flow?.editor?.ensureHistoryBaseline?.();
                 const val = parseInt(e.target.value);
                 if (!this.currentStyle.strokes) this.currentStyle.strokes = [];
                 if (this.currentStyle.strokes.length === 0) this.currentStyle.strokes.push({ width: 2, color: '#000000', opacity: 100 });
@@ -456,6 +470,7 @@ class SubtitleStyleManager {
                 this.syncCurrentStyleToTrack();
                 this.updateSubtitlePreview();
                 this.saveCurrentStylePreference();
+                this.scheduleStyleHistoryCommit();
             });
         }
 
@@ -659,6 +674,7 @@ class SubtitleStyleManager {
     // ==================== Effects Management ====================
 
     addEffect() {
+        this.flow?.editor?.ensureHistoryBaseline?.();
         if (!this.currentStyle.shadows) this.currentStyle.shadows = [];
         // Default to a visible shadow/glow
         this.currentStyle.shadows.push({
@@ -671,6 +687,7 @@ class SubtitleStyleManager {
         this.renderEffectsUI();
         this.updateSubtitlePreview();
         this.saveCurrentStylePreference();
+        this.scheduleStyleHistoryCommit();
 
         // Switch to custom template
         if (this.templateManager.styleTemplate && this.templateManager.styleTemplate.value !== 'custom') {
@@ -681,11 +698,13 @@ class SubtitleStyleManager {
 
     removeEffect(index) {
         if (!this.currentStyle.shadows) return;
+        this.flow?.editor?.ensureHistoryBaseline?.();
         this.currentStyle.shadows.splice(index, 1);
         this.syncCurrentStyleToTrack();
         this.renderEffectsUI();
         this.updateSubtitlePreview();
         this.saveCurrentStylePreference();
+        this.scheduleStyleHistoryCommit();
 
         // Switch to custom template
         if (this.templateManager.styleTemplate && this.templateManager.styleTemplate.value !== 'custom') {
@@ -696,10 +715,12 @@ class SubtitleStyleManager {
 
     updateEffect(index, key, value) {
         if (!this.currentStyle.shadows || !this.currentStyle.shadows[index]) return;
+        this.flow?.editor?.ensureHistoryBaseline?.();
         this.currentStyle.shadows[index][key] = value;
         this.syncCurrentStyleToTrack();
         this.updateSubtitlePreview();
         this.saveCurrentStylePreference();
+        this.scheduleStyleHistoryCommit();
 
         // Switch to custom template
         if (this.templateManager.styleTemplate && this.templateManager.styleTemplate.value !== 'custom') {
@@ -875,6 +896,7 @@ class SubtitleStyleManager {
     }
 
     addBlurMask() {
+        this.flow?.editor?.ensureHistoryBaseline?.();
         if (!this.currentStyle.blurMasks) this.currentStyle.blurMasks = [];
         this.currentStyle.blurMasks.push({
             position: 'custom', // Fixed logic for now
@@ -883,18 +905,26 @@ class SubtitleStyleManager {
             strength: 15
         });
         this.renderBlurMasksList();
+        this.syncCurrentStyleToTrack();
+        this.scheduleStyleHistoryCommit();
     }
 
     removeBlurMask(index) {
         if (!this.currentStyle.blurMasks) return;
+        this.flow?.editor?.ensureHistoryBaseline?.();
         this.currentStyle.blurMasks.splice(index, 1);
         this.renderBlurMasksList();
+        this.syncCurrentStyleToTrack();
+        this.scheduleStyleHistoryCommit();
     }
 
     updateBlurMask(index, key, value) {
         if (!this.currentStyle.blurMasks || !this.currentStyle.blurMasks[index]) return;
+        this.flow?.editor?.ensureHistoryBaseline?.();
         this.currentStyle.blurMasks[index][key] = value;
+        this.syncCurrentStyleToTrack();
         this.updateBlurPreview();
+        this.scheduleStyleHistoryCommit();
     }
 
     updateBlurPreview() {

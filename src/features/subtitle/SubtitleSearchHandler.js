@@ -74,7 +74,7 @@ class SubtitleSearchHandler {
         if (results.length === 0) return 0;
 
         // 记录历史
-        this.editor.addToHistory();
+        this.editor.ensureHistoryBaseline?.();
 
         let count = 0;
         const regex = this.isRegex ? new RegExp(searchQuery, this.caseSensitive ? 'g' : 'gi') : null;
@@ -172,7 +172,7 @@ class SubtitleSearchHandler {
         if (!sub || this.editor.isSubtitleLocked?.(index)) return false;
 
         // 记录历史
-        this.editor.addToHistory();
+        this.editor.ensureHistoryBaseline?.();
 
         const regex = this.isRegex ? new RegExp(searchQuery, this.caseSensitive ? 'g' : 'gi') : null;
         let modified = false;

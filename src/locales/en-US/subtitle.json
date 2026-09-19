@@ -416,6 +416,7 @@
       "cancelBtn": "Cancel",
       "changePath": "Change",
       "typeVideoAudio": "Video + AI Voice",
+      "typeVideoOriginal": "Video + Original Audio + Subtitles",
       "typeVideoOnly": "Video Only (Mute)",
       "typeAudioOnly": "Audio Only (MP3)"
     },

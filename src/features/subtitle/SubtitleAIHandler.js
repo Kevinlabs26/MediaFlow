@@ -319,6 +319,7 @@ class SubtitleAIHandler {
 
             // 4. Update target subtitle track
             const targetTrack = this.getRecognitionTargetTrack();
+            this.flow.editor?.ensureHistoryBaseline?.();
             if (targetTrack) {
                 const writeMode = await this.resolveRecognitionWriteMode(targetTrack);
                 if (!writeMode) {
@@ -331,14 +332,17 @@ class SubtitleAIHandler {
                 this.flow.trackManager.renderTracks();
                 this.flow.trackManager.setActiveTrack(targetTrack.id);
             } else {
-                this.flow.trackManager.addTrack(window.i18n.t('subtitle.messages.mainTrack'), 'main');
-                const tracks = this.flow.trackManager.tracks;
-                const newTrack = tracks[tracks.length - 1];
+                const newTrack = this.flow.trackManager.addTrack(
+                    window.i18n.t('subtitle.messages.mainTrack'),
+                    'main',
+                    { recordHistory: false }
+                );
                 newTrack.subtitles = this.normalizeRecognitionSubtitles(finalSubtitles);
                 
                 this.flow.trackManager.renderTracks();
                 this.flow.trackManager.setActiveTrack(newTrack.id);
             }
+            this.flow.editor?.addToHistory();
 
             // Cache results for batch handler
             if (this.flow.batchHandler && this.flow.videoFile) {

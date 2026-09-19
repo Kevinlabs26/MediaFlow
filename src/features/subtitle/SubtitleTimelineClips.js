@@ -682,7 +682,7 @@ class SubtitleTimelineClips {
                 }
 
                 dragStarted = true;
-                if (editor) editor.addToHistory();
+                if (editor) editor.ensureHistoryBaseline();
                 el.classList.add('dragging');
             }
 
@@ -694,14 +694,24 @@ class SubtitleTimelineClips {
             let masterSnappedTime = this.applySnapping(masterTime, index, trackId);
             let finalDx = masterSnappedTime - startVal; // 最终实际位移量
 
+            if (type === 'move') {
+                const minStart = Math.min(...dragTargets.map(target => target.originalStart));
+                const maxEnd = Math.max(...dragTargets.map(target => target.originalEnd));
+                const minDx = -minStart;
+                finalDx = Math.max(finalDx, minDx);
+                if (this.timeline.duration > 0) {
+                    const maxDx = this.timeline.duration - maxEnd;
+                    if (maxDx >= minDx) finalDx = Math.min(finalDx, maxDx);
+                }
+            }
+
             dragTargets.forEach(target => {
                 const subRef = target.sub;
                 const origVal = target.startVal;
 
                 if (type === 'move') {
-                    const dur = subRef.end - subRef.start;
-                    subRef.start = origVal + finalDx;
-                    subRef.end = subRef.start + dur;
+                    subRef.start = target.originalStart + finalDx;
+                    subRef.end = target.originalEnd + finalDx;
                 } else if (type === 'left') {
                     subRef.start = Math.max(0, Math.min(subRef.end - 0.1, origVal + finalDx));
                 } else if (type === 'right') {
@@ -778,11 +788,19 @@ class SubtitleTimelineClips {
                     return {
                         idx,
                         sub: s,
-                        startVal: (type === 'right' ? s.end : s.start)
+                        startVal: (type === 'right' ? s.end : s.start),
+                        originalStart: s.start,
+                        originalEnd: s.end
                     };
                 });
             } else {
-                dragTargets = [{ idx: index, sub, startVal }];
+                dragTargets = [{
+                    idx: index,
+                    sub,
+                    startVal,
+                    originalStart: sub.start,
+                    originalEnd: sub.end
+                }];
             }
 
             window.addEventListener('mousemove', onMove);

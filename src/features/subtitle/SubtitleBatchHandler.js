@@ -532,7 +532,8 @@ class SubtitleBatchHandler {
             onProgress(window.i18n.t('subtitle.messages.ttsBatch'));
             try {
                 const ttsInfo = this.flow.ttsHandler.getSettings();
-                const ttsPath = await this.flow.ttsHandler.generateBatch(finalSubtitles);
+                const ttsResult = await this.flow.ttsHandler.generateBatch(finalSubtitles);
+                const ttsPath = typeof ttsResult === 'string' ? ttsResult : ttsResult?.path;
 
                 if (ttsPath) {
                     ttsSettings = {

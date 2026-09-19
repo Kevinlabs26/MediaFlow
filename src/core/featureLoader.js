@@ -237,11 +237,11 @@
     }
 
     async function ensureSubtitle(app) {
+        if (subtitlePromise) return subtitlePromise;
+
         if (root.subtitleFlow && typeof root.subtitleFlow.init === 'function') {
             return root.subtitleFlow;
         }
-
-        if (subtitlePromise) return subtitlePromise;
 
         subtitlePromise = withFeatureLoading('subtitle', async () => {
             const loader = root.ScriptLoader;

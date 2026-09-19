@@ -159,6 +159,34 @@ describe('SubtitleFlow draft style recovery', () => {
         );
     });
 
+    it('shares initialization and never binds the add-subtitle button twice', async () => {
+        document.body.innerHTML = '<button id="btn-add-subtitle" type="button"></button>';
+
+        const flow = new window.SubtitleFlow({});
+        flow._initInternal = jest.fn().mockResolvedValue(undefined);
+        await Promise.all([flow.init(), flow.init()]);
+        expect(flow._initInternal).toHaveBeenCalledTimes(1);
+
+        flow.editor = { addSubtitle: jest.fn() };
+        flow.btnAddSubtitle = document.getElementById('btn-add-subtitle');
+        flow.initToolbarScroll = jest.fn();
+        flow.bindEvents();
+        flow.bindEvents();
+        flow.btnAddSubtitle.click();
+
+        expect(flow.editor.addSubtitle).toHaveBeenCalledTimes(1);
+
+        const staleFlow = new window.SubtitleFlow({});
+        staleFlow.editor = { addSubtitle: jest.fn() };
+        staleFlow.btnAddSubtitle = flow.btnAddSubtitle;
+        staleFlow.initToolbarScroll = jest.fn();
+        staleFlow.bindEvents();
+        flow.btnAddSubtitle.click();
+
+        expect(flow.editor.addSubtitle).toHaveBeenCalledTimes(2);
+        expect(staleFlow.editor.addSubtitle).not.toHaveBeenCalled();
+    });
+
     it('manages source media segments independently from subtitle tracks', () => {
         const flow = new window.SubtitleFlow({});
         flow.videoFile = { path: '/clip.mp4', duration: 12 };

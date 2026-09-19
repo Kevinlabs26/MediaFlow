@@ -43,6 +43,8 @@ describe('SubtitleTimelineClips selection sync', () => {
                 render: jest.fn(),
                 focusSubtitle: jest.fn(),
                 addToHistory: jest.fn(),
+                ensureHistoryBaseline: jest.fn(),
+                ensureHistoryBaseline: jest.fn(),
                 getOriginalText: jest.fn((sub) => sub.originalText || ''),
                 getTranslatedText: jest.fn((sub) => sub.translatedText || '')
             },
@@ -52,6 +54,8 @@ describe('SubtitleTimelineClips selection sync', () => {
         const timeline = {
             flow,
             pxPerSec: 100,
+            duration: 3,
+            duration: 3,
             displayMode: 'translated',
             tracksList: document.createElement('div')
         };
@@ -114,6 +118,25 @@ describe('SubtitleTimelineClips selection sync', () => {
         expect(flow.editor.render).toHaveBeenCalledTimes(1);
         expect(flow.editor.addToHistory).not.toHaveBeenCalled();
         expect(flow.editor.focusSubtitle).toHaveBeenCalledWith(0, true);
+    });
+
+    test('dragging clips cannot move them before zero or beyond media duration', () => {
+        const firstSetup = createClipsManager();
+        firstSetup.clipElements[0].dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: 20 }));
+        window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: -180 }));
+        window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: -180 }));
+
+        expect(firstSetup.track.subtitles[0].start).toBe(0);
+        expect(firstSetup.track.subtitles[0].end).toBe(1);
+        expect(firstSetup.flow.editor.ensureHistoryBaseline).toHaveBeenCalledTimes(1);
+
+        const lastSetup = createClipsManager();
+        lastSetup.clipElements[2].dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: 220 }));
+        window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 520 }));
+        window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: 520 }));
+
+        expect(lastSetup.track.subtitles[2].start).toBe(2);
+        expect(lastSetup.track.subtitles[2].end).toBe(3);
     });
 
     test('source media clips show both video and original-audio affordances', () => {

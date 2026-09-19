@@ -19,6 +19,9 @@ class MediaFlowApp {
         this.dragDropManager = new window.DragDropManager(this);
         this.historyManager = new window.HistoryFlow(this);
         this.updateManager = new window.UpdateManager(this);
+        this.updateWelcome = typeof window.UpdateWelcome === 'function'
+            ? new window.UpdateWelcome(this)
+            : null;
 
         // Feature Flows — heavy toolboxes lazy-loaded via FeatureLoader
         this.creatorFlow = null;
@@ -219,6 +222,12 @@ class MediaFlowApp {
                 }
             } catch (onboardingErr) {
                 console.warn('[App] onboarding skipped:', onboardingErr);
+            }
+
+            try {
+                await this.updateWelcome?.showIfNeeded?.();
+            } catch (welcomeErr) {
+                console.warn('[App] update welcome skipped:', welcomeErr);
             }
 
         } catch (err) {

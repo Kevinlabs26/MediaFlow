@@ -73,6 +73,11 @@ describe('Page template quality guards', () => {
         expect(document.getElementById('subtitle-export-modal').textContent).toContain('开始合成');
     });
 
+    test('subtitle export defaults to original audio with text subtitles', () => {
+        const document = new JSDOM(readPage('subtitle')).window.document;
+        expect(document.getElementById('export-type-select').value).toBe('video_original');
+    });
+
     test.each(['subtitle', 'settings'])('%s template references existing zh-CN and en-US locale keys', (pageName) => {
         const keys = collectTemplateI18nKeys(pageName);
         const locales = {

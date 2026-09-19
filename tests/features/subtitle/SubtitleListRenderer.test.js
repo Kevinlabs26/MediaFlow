@@ -127,6 +127,26 @@ describe('SubtitleListRenderer text layout responsiveness', () => {
         expect(renderer.listContent.querySelector('[data-empty-action="clear-media"]')).not.toBeNull();
     });
 
+    test('hides the redundant empty header before media is imported', () => {
+        const container = document.getElementById('subtitle-list-container');
+        const editor = {
+            viewMode: 'full',
+            textLayoutMode: 'stacked',
+            flow: {}
+        };
+
+        const renderer = new window.SubtitleListRenderer(editor);
+        renderer.init(container);
+        renderer.renderEmptyState('', true);
+
+        expect(renderer.listContent.querySelector('.empty-state-title')).toBeNull();
+        expect(renderer.listContent.querySelector('.empty-state-hint')).toBeNull();
+        expect(renderer.listContent.querySelector('.empty-state-icon-wrap')).toBeNull();
+        expect(renderer.listContent.querySelector('[data-empty-action="import-video"]')).not.toBeNull();
+        expect(renderer.listContent.querySelector('[data-empty-action="ai"]')).not.toBeNull();
+        expect(renderer.listContent.querySelector('[data-empty-action="add"]')).not.toBeNull();
+    });
+
     test('estimates taller rows only for entries that need extra text space', () => {
         const container = document.getElementById('subtitle-list-container');
         Object.defineProperty(container, 'clientWidth', {

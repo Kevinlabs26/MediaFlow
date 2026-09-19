@@ -42,6 +42,12 @@ class SubtitleFlow {
         this.dubAdapter = new window.SubtitleDubAdapter(this);
         this.visualOptimizer = new window.SubtitleVisualOptimizer(this);
         this.draftManager = new window.SubtitleDraftManager(this);
+
+        // The router and feature loader can both request initialization during
+        // the same navigation. Keep one shared promise so DOM listeners are
+        // installed exactly once.
+        this._initPromise = null;
+        this._eventsBound = false;
     }
 
     get tracks() { return this.trackManager.tracks; }
@@ -577,7 +583,18 @@ class SubtitleFlow {
         };
     }
 
-    async init() {
+    init() {
+        if (this._initPromise) return this._initPromise;
+
+        this._initPromise = this._initInternal().catch((error) => {
+            this._initPromise = null;
+            throw error;
+        });
+
+        return this._initPromise;
+    }
+
+    async _initInternal() {
         console.log('[SubtitleFlow] Initializing...');
 
         // 绑定关键 DOM 元素
@@ -730,6 +747,9 @@ class SubtitleFlow {
     // bindElements moved to SubtitleUIManager
 
     bindEvents() {
+        if (this._eventsBound) return;
+        this._eventsBound = true;
+
         // 全局语言变更响应
         window.addEventListener('languageChanged', (e) => {
             console.log('[SubtitleFlow] Language changed event received:', e.detail.lang);
@@ -755,7 +775,13 @@ class SubtitleFlow {
         this.btnToggleTextLayout?.addEventListener('click', () => this.editor?.toggleTextLayoutMode());
         this.btnCycleDisplayMode?.addEventListener('click', () => this.editor?.cycleDisplayMode());
 
-        this.btnAddSubtitle?.addEventListener('click', () => this.editor?.addSubtitle());
+        this.btnAddSubtitle?.addEventListener('click', (event) => {
+            // A stale flow instance can survive a page transition in a packaged
+            // renderer. Treat one DOM click as one command across instances.
+            if (event.__mediaflowSubtitleAddHandled) return;
+            event.__mediaflowSubtitleAddHandled = true;
+            this.editor?.addSubtitle();
+        });
         document.getElementById('btn-locate-current-sub')?.addEventListener('click', () => {
             this.locateCurrentSubtitle();
         });

@@ -87,6 +87,37 @@ describe('FeatureLoader.ensureEnhance', () => {
         expect(window.ScriptLoader.loadScripts).toHaveBeenCalledTimes(1);
     });
 
+    test('ensureSubtitle shares initialization across concurrent calls', async () => {
+        delete window.subtitleFlow;
+        delete window.SubtitleFlow;
+
+        let finishInit;
+        const initGate = new Promise((resolve) => {
+            finishInit = resolve;
+        });
+        const init = jest.fn(() => initGate);
+
+        window.ScriptLoader.loadScripts = jest.fn().mockImplementation(async () => {
+            window.SubtitleFlow = class FakeSubtitle {
+                init() {
+                    return init();
+                }
+            };
+        });
+
+        const app = {};
+        const first = window.FeatureLoader.ensureSubtitle(app);
+        await Promise.resolve();
+        const second = window.FeatureLoader.ensureSubtitle(app);
+
+        finishInit();
+        const [firstFlow, secondFlow] = await Promise.all([first, second]);
+
+        expect(secondFlow).toBe(firstFlow);
+        expect(init).toHaveBeenCalledTimes(1);
+        expect(window.ScriptLoader.loadScripts).toHaveBeenCalledTimes(1);
+    });
+
     test('ensureCreator loads scripts, constructs CreatorFlow, and inits once', async () => {
         delete window.creatorFlow;
         delete window.CreatorFlow;

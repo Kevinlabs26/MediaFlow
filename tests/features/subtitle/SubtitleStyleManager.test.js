@@ -41,4 +41,18 @@ describe('SubtitleStyleManager', () => {
         expect(manager.importPreset).toHaveBeenCalledTimes(1);
         expect(manager.exportPreset).toHaveBeenCalledTimes(1);
     });
+
+    test('keeps decimal style values from number inputs', () => {
+        const manager = new window.SubtitleStyleManager({});
+        manager.lineHeight = document.createElement('input');
+        manager.lineHeight.type = 'number';
+        manager.updateStyle = jest.fn();
+        manager.bindStyleInputs();
+
+        manager.lineHeight.value = '1.35';
+        manager.lineHeight.dispatchEvent(new Event('input', { bubbles: true }));
+
+        expect(manager.updateStyle).toHaveBeenCalledWith({ lineHeight: 1.35 });
+    });
+
 });

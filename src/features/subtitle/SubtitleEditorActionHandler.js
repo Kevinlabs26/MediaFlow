@@ -24,6 +24,10 @@ class SubtitleEditorActionHandler {
         return this.editor?.isSubtitleLocked?.(index);
     }
 
+    getCurrentIndex(subtitle) {
+        return this.editor.subtitles.indexOf(subtitle);
+    }
+
     resolveClipActionTrack() {
         const flow = this.flow || {};
         const clipsManager = flow.timeline?.clipsManager;
@@ -296,6 +300,7 @@ class SubtitleEditorActionHandler {
         // --- 核心改进：迭代式重叠冲突回避算法 ---
         let start = currentTime;
         let duration = 2.0; // 默认目标时长
+        let foundSlot = false;
 
         // 持续向后寻址，直到找到一个至少能容纳 0.5s 的空隙
         let attempts = 0;
@@ -323,13 +328,34 @@ class SubtitleEditorActionHandler {
             }
             
             // 找到合适空隙，退出循环
+            foundSlot = true;
             break;
+        }
+
+        if (!foundSlot) {
+            window.app?.showToast?.(
+                this.translateOrFallback('subtitle.toast.no_available_slot', 'No available subtitle slot was found.'),
+                'warning'
+            );
+            return;
+        }
+
+        const mediaDuration = Number(this.flow.video?.duration || this.flow.timeline?.duration || 0);
+        if (mediaDuration > 0) {
+            if (start >= mediaDuration - 0.1) {
+                window.app?.showToast?.(
+                    this.translateOrFallback('subtitle.toast.no_available_slot', 'No available subtitle slot was found.'),
+                    'warning'
+                );
+                return;
+            }
+            duration = Math.min(duration, mediaDuration - start);
         }
 
         const newSub = {
             id: Date.now(),
             start: start,
-            end: start + Math.max(0.5, duration),
+            end: start + Math.max(0.1, duration),
             text: '',
             originalText: '',
             translatedText: '',
@@ -692,6 +718,7 @@ class SubtitleEditorActionHandler {
         }
 
         try {
+            this.editor.ensureHistoryBaseline();
             const progressKey = retranslate
                 ? 'subtitle.progress.rerecognizing_retranslating_single'
                 : 'subtitle.progress.rerecognizing_single';
@@ -715,8 +742,9 @@ class SubtitleEditorActionHandler {
                 }
             }
 
-            this.editor.ensureHistoryBaseline();
-            this.editor.updateSubtitleText(index, recognizedText, nextTranslation);
+            const currentIndex = this.getCurrentIndex(sub);
+            if (currentIndex === -1 || this.isLocked(currentIndex)) return;
+            this.editor.updateSubtitleText(currentIndex, recognizedText, nextTranslation);
             this.editor.render();
             this.editor.addToHistory();
 
@@ -756,6 +784,7 @@ class SubtitleEditorActionHandler {
             return;
         }
         try {
+            this.editor.ensureHistoryBaseline();
             const translation = await this.flow.service.retranslate(
                 original,
                 targetLang,
@@ -776,7 +805,9 @@ class SubtitleEditorActionHandler {
             }
 
             if (translation) {
-                this.editor.updateSubtitleText(index, original, translation);
+                const currentIndex = this.getCurrentIndex(sub);
+                if (currentIndex === -1 || this.isLocked(currentIndex)) return;
+                this.editor.updateSubtitleText(currentIndex, original, translation);
                 this.editor.render();
                 this.editor.addToHistory();
                 window.app?.showToast?.(this.translateOrFallback('subtitle.toast.retranslate_success', 'Subtitle re-translated.'), 'success');
@@ -801,9 +832,12 @@ class SubtitleEditorActionHandler {
         const maxChars = Math.floor(duration * 1.2 * (isChinese ? 4 : 12));
 
         try {
+            this.editor.ensureHistoryBaseline();
             const compressed = await this.flow.service.compressTranslation(text, maxChars, isChinese);
             if (compressed) {
-                this.editor.updateSubtitleText(index, sub.originalText, compressed);
+                const currentIndex = this.getCurrentIndex(sub);
+                if (currentIndex === -1 || this.isLocked(currentIndex)) return;
+                this.editor.updateSubtitleText(currentIndex, sub.originalText, compressed);
                 this.editor.render();
                 this.editor.addToHistory();
             }
@@ -818,6 +852,7 @@ class SubtitleEditorActionHandler {
     setTtsSource(index, source) {
         const sub = this.editor.subtitles[index];
         if (sub && !this.isLocked(index)) {
+            this.editor.ensureHistoryBaseline();
             sub.ttsSource = source;
             sub.ttsSourceUserSet = true;
             this.flow.uiManager?.settings?.refreshDubStatusPanel?.();
@@ -991,7 +1026,10 @@ class SubtitleEditorActionHandler {
                 const compressed = await this.flow.service.compressTranslation(text, limit, isChinese);
 
                 if (compressed && compressed.trim() !== text.trim()) {
-                    this.editor.updateSubtitleText(idx, sub.originalText, compressed);
+                    const currentIndex = this.getCurrentIndex(sub);
+                    if (currentIndex !== -1 && !this.isLocked(currentIndex)) {
+                        this.editor.updateSubtitleText(currentIndex, sub.originalText, compressed);
+                    }
                 }
             }
 
@@ -1020,6 +1058,7 @@ class SubtitleEditorActionHandler {
         if (!confirmed) return;
 
         try {
+            this.editor.ensureHistoryBaseline();
             this.flow.showProgress(window.i18n.t('subtitle.progress.generating_all_tts'));
             
             const result = await this.flow.ttsHandler.generateBatch(this.editor.subtitles);
@@ -1090,6 +1129,7 @@ class SubtitleEditorActionHandler {
             for (let i = 0; i < selectedIndices.length; i++) {
                 const idx = selectedIndices[i];
                 const sub = this.editor.subtitles[idx];
+                if (!sub) continue;
                 const original = this.editor.getOriginalText(sub);
                 const previousTranslation = this.editor.getTranslatedText(sub);
                 const targetLang = this.getRetranslateTargetLang(sub);
@@ -1122,7 +1162,9 @@ class SubtitleEditorActionHandler {
                         continue;
                     }
 
-                    this.editor.updateSubtitleText(idx, original, translation);
+                    const currentIndex = this.getCurrentIndex(sub);
+                    if (currentIndex === -1 || this.isLocked(currentIndex)) continue;
+                    this.editor.updateSubtitleText(currentIndex, original, translation);
                     changedCount += 1;
                 }
             }
@@ -1240,6 +1282,7 @@ class SubtitleEditorActionHandler {
         const sub = this.editor.subtitles[index];
         if (!sub) return;
         if (this.isLocked(index)) return;
+        this.editor.ensureHistoryBaseline();
 
         if (settings === null) {
             delete sub.ttsLocal;

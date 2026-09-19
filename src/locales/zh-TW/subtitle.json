@@ -392,6 +392,7 @@
       "cancelBtn": "取消",
       "changePath": "更改",
       "typeVideoAudio": "視頻 + AI 配音",
+      "typeVideoOriginal": "視頻 + 原聲 + 字幕",
       "typeVideoOnly": "僅視頻 (靜音)",
       "typeAudioOnly": "僅音頻 (MP3)",
       "precheck_title": "合成前检查（共 {{count}} 条）",

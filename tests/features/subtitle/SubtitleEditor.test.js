@@ -63,9 +63,50 @@ describe('SubtitleEditor history baseline tracking', () => {
         editor.updateSubtitleText(0, 'updated', '');
         expect(track.historyDirty).toBe(true);
 
-        editor.ensureHistoryBaseline();
+        editor.addToHistory();
         expect(track.history).toHaveLength(2);
         expect(track.historyDirty).toBe(false);
+    });
+
+    test('keeps intentionally cleared original and translated text empty', () => {
+        const subtitle = { id: 's1', text: 'legacy text', originalText: 'old', translatedText: 'translated' };
+        const track = { id: 'main', name: 'Main', subtitles: [subtitle], history: [], historyIndex: -1 };
+        const flow = {
+            trackManager: { activeTrackId: 'main', tracks: [track] },
+            timeline: null,
+            updateSubtitlePreview: jest.fn(),
+            triggerAutoSave: jest.fn(),
+            autoUpdateSubtitleTTS: jest.fn()
+        };
+        const editor = new window.SubtitleEditor(flow);
+        editor.subtitles = track.subtitles;
+
+        editor.updateSubtitleText(0, '', '');
+
+        expect(editor.getOriginalText(subtitle)).toBe('');
+        expect(editor.getTranslatedText(subtitle)).toBe('');
+        expect(subtitle.text).toBe('');
+    });
+
+    test('undo and redo restore track structure across the whole project', () => {
+        const track = { id: 'main', name: 'Main', subtitles: [], history: [], historyIndex: -1 };
+        const flow = {
+            trackManager: { activeTrackId: 'main', tracks: [track] },
+            timeline: null,
+            updateSubtitlePreview: jest.fn(),
+            triggerAutoSave: jest.fn(),
+            autoUpdateSubtitleTTS: jest.fn()
+        };
+        const editor = new window.SubtitleEditor(flow);
+        editor.addToHistory();
+        flow.trackManager.tracks.push({ id: 'second', name: 'Second', subtitles: [] });
+        editor.addToHistory();
+
+        editor.undo();
+        expect(flow.trackManager.tracks.map((item) => item.id)).toEqual(['main']);
+
+        editor.redo();
+        expect(flow.trackManager.tracks.map((item) => item.id)).toEqual(['main', 'second']);
     });
 
     test('manual subtitle renders are synced back to the active subtitle track', () => {

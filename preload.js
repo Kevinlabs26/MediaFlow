@@ -449,6 +449,7 @@ contextBridge.exposeInMainWorld('mediaflow', {
     // 自动更新
     updater: {
         check: () => ipcRenderer.invoke('updater:check'),
+        getDownloaded: () => ipcRenderer.invoke('updater:get-downloaded'),
         quitAndInstall: () => ipcRenderer.send('updater:quit-and-install'),
         onAvailable: (callback) => {
             const listener = (event, info) => callback(info);

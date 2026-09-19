@@ -222,7 +222,7 @@ class SubtitleQualityHandler {
         const prev = subs[index - 1];
         const sub = subs[index];
 
-        this.editor.addToHistory();
+        this.editor.ensureHistoryBaseline();
         sub.start = prev.end;
 
         // 如果开始时间超过结束时间，则顺延结束时间
@@ -233,6 +233,7 @@ class SubtitleQualityHandler {
         this.editor.render(subs);
         this.runQC(); // 重新扫描
         this.editor.flow.updateSubtitlePreview();
+        this.editor.addToHistory();
         return true;
     }
 
@@ -243,12 +244,13 @@ class SubtitleQualityHandler {
         const sub = this.editor.subtitles[index];
         if (!sub || this.editor.isSubtitleLocked?.(index)) return false;
 
-        this.editor.addToHistory();
+        this.editor.ensureHistoryBaseline();
         sub.end = sub.start + 1.0;
 
         this.editor.render(this.editor.subtitles);
         this.runQC();
         this.editor.flow.updateSubtitlePreview();
+        this.editor.addToHistory();
         return true;
     }
 
@@ -266,7 +268,7 @@ class SubtitleQualityHandler {
 
         if (mainText.length <= limit) return false;
 
-        this.editor.addToHistory();
+        this.editor.ensureHistoryBaseline();
 
         if (strategy === 'split') {
             // --- 策略 1: 智能分条 (Split) ---
@@ -323,6 +325,7 @@ class SubtitleQualityHandler {
         this.editor.render(this.editor.subtitles);
         this.runQC();
         f.updateSubtitlePreview();
+        this.editor.addToHistory();
         return true;
     }
 

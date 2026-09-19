@@ -311,9 +311,9 @@
     }
 
     getExportType() {
-        const selectedType = this.typeSelect?.value || 'video_only';
-        return !this.isTtsEnabled() && selectedType !== 'video_only'
-            ? 'video_only'
+        const selectedType = this.typeSelect?.value || 'video_original';
+        return !this.isTtsEnabled() && (selectedType === 'video_audio' || selectedType === 'audio_only')
+            ? 'video_original'
             : selectedType;
     }
 
@@ -327,8 +327,8 @@
             }
         });
 
-        if (!ttsEnabled && this.typeSelect.value !== 'video_only') {
-            this.typeSelect.value = 'video_only';
+        if (!ttsEnabled && (this.typeSelect.value === 'video_audio' || this.typeSelect.value === 'audio_only')) {
+            this.typeSelect.value = 'video_original';
         }
     }
 
@@ -644,7 +644,8 @@
 
                 if (mainTrack && mainTrack.subtitles && mainTrack.subtitles.length > 0) {
                     try {
-                        const ttsPath = await this.flow.ttsHandler.generateBatch(mainTrack.subtitles);
+                        const ttsResult = await this.flow.ttsHandler.generateBatch(mainTrack.subtitles);
+                        const ttsPath = typeof ttsResult === 'string' ? ttsResult : ttsResult?.path;
                         if (ttsPath) {
                             ttsSettings = {
                                 armed: true,

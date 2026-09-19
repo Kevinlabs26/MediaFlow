@@ -18,8 +18,11 @@ class SubtitleEditor {
         this.textLayoutMode = 'stacked';
         this.reviewFilter = 'all';
 
-        // 历史记录 (弃用全局栈，改用轨道私有栈)
+        // Project-wide history keeps tracks, styles and subtitles in one undo chain.
         this.maxHistory = 50;
+        this.history = [];
+        this.historyIndex = -1;
+        this.historyDirty = false;
 
         // 委托子模块
         this.renderer = new window.SubtitleListRenderer(this);
@@ -181,7 +184,7 @@ class SubtitleEditor {
     // --- 数据更新入口 ---
     getOriginalText(sub) {
         if (!sub) return '';
-        if (typeof sub.originalText === 'string' && sub.originalText.length > 0) {
+        if (typeof sub.originalText === 'string') {
             return sub.originalText;
         }
 
@@ -191,7 +194,7 @@ class SubtitleEditor {
 
     getTranslatedText(sub) {
         if (!sub) return '';
-        if (typeof sub.translatedText === 'string' && sub.translatedText.length > 0) {
+        if (typeof sub.translatedText === 'string') {
             return sub.translatedText;
         }
 
@@ -411,6 +414,7 @@ class SubtitleEditor {
         const sub = this.subtitles[index];
         if (sub) {
             if (this.isSubtitleLocked(sub)) return;
+            this.ensureHistoryBaseline();
             sub.originalText = typeof original === 'string' ? original : '';
             sub.translatedText = typeof translated === 'string' ? translated : '';
             sub.translationTargetLang = sub.translatedText
@@ -736,6 +740,7 @@ class SubtitleEditor {
     }
 
     markHistoryDirty() {
+        this.historyDirty = true;
         const track = this.getActiveTrack();
         if (track) {
             track.historyDirty = true;
@@ -743,17 +748,52 @@ class SubtitleEditor {
     }
 
     ensureHistoryBaseline() {
-        const track = this.getActiveTrack();
-        if (!track) return;
-
-        if (!track.history) track.history = [];
-        if (track.historyIndex === undefined) track.historyIndex = -1;
-
-        if (!track.historyDirty && track.historyIndex >= 0 && track.history[track.historyIndex] !== undefined) {
+        if (this.historyIndex >= 0 && this.history[this.historyIndex] !== undefined) {
             return;
         }
 
         this.addToHistory();
+    }
+
+    captureHistoryState() {
+        const tracks = (this.flow.trackManager?.tracks || []).map((track) => {
+            const state = { ...track };
+            delete state.history;
+            delete state.historyIndex;
+            delete state.historyDirty;
+            return state;
+        });
+
+        return {
+            tracks: JSON.parse(JSON.stringify(tracks)),
+            activeTrackId: this.flow.trackManager?.activeTrackId ?? null,
+            currentStyle: this.flow.currentStyle
+                ? JSON.parse(JSON.stringify(this.flow.currentStyle))
+                : null
+        };
+    }
+
+    restoreHistoryState(snapshot) {
+        if (typeof this.flow.restoreFromSnapshot === 'function') {
+            this.flow.restoreFromSnapshot(snapshot);
+        } else {
+            const manager = this.flow.trackManager;
+            manager.tracks = JSON.parse(JSON.stringify(snapshot.tracks || []));
+            manager.activeTrackId = manager.tracks.some((track) => track.id === snapshot.activeTrackId)
+                ? snapshot.activeTrackId
+                : (manager.tracks[0]?.id ?? null);
+            const activeTrack = manager.tracks.find((track) => track.id === manager.activeTrackId);
+            this.subtitles = activeTrack?.subtitles || [];
+            this.render();
+            this.flow.updateSubtitlePreview?.();
+        }
+
+        const activeTrack = this.getActiveTrack();
+        if (activeTrack) {
+            activeTrack.history = this.history;
+            activeTrack.historyIndex = this.historyIndex;
+            activeTrack.historyDirty = false;
+        }
     }
 
     /**
@@ -761,79 +801,67 @@ class SubtitleEditor {
      * @param {boolean} force 是否强制添加（跳过内容重复检查）
      */
     addToHistory(force = false) {
+        this.flow.triggerAutoSave?.();
         const track = this.getActiveTrack();
-        if (!track) return;
-
-        // 确保轨道有历史栈初始化
-        if (!track.history) track.history = [];
-        if (track.historyIndex === undefined) track.historyIndex = -1;
-        if (track.historyDirty === undefined) track.historyDirty = false;
-
-        const entry = JSON.stringify(this.subtitles);
+        const entry = JSON.stringify(this.captureHistoryState());
         
         // 如果内容没变且不是强制保存，则不增加记录
-        if (!force && track.history[track.historyIndex] === entry) {
+        if (!force && this.history[this.historyIndex] === entry) {
             return;
         }
 
         // 截断重做路径
-        if (track.historyIndex < track.history.length - 1) {
-            track.history = track.history.slice(0, track.historyIndex + 1);
+        if (this.historyIndex < this.history.length - 1) {
+            this.history = this.history.slice(0, this.historyIndex + 1);
         }
 
-        track.history.push(entry); 
-        track.historyIndex++;
+        this.history.push(entry);
+        this.historyIndex++;
 
-        if (track.history.length > this.maxHistory) {
-            track.history.shift();
-            track.historyIndex--;
+        if (this.history.length > this.maxHistory) {
+            this.history.shift();
+            this.historyIndex--;
         }
 
-        track.historyDirty = false;
-        
-        console.log(`[SubtitleEditor] History pushed for track ${track.name}. Index:`, track.historyIndex);
+        this.historyDirty = false;
+        if (track) {
+            track.history = this.history;
+            track.historyIndex = this.historyIndex;
+            track.historyDirty = false;
+        }
+
+        console.log('[SubtitleEditor] Project history pushed. Index:', this.historyIndex);
     }
 
     undo() {
-        const track = this.getActiveTrack();
-        if (!track || !track.history || track.historyIndex <= 0) {
+        if (this.historyDirty) {
+            this.addToHistory();
+        }
+        if (this.historyIndex <= 0) {
             window.app?.showToast?.(window.i18n.t('subtitle.editor.no_more_undo'), 'warning');
             return;
         }
 
-        track.historyIndex--;
-        const snapshot = JSON.parse(track.history[track.historyIndex]);
-        
-        // 重要：同步更新编辑器引用和轨道引用
-        this.subtitles = snapshot;
-        track.subtitles = snapshot;
-        track.historyDirty = false;
-
-        this.render();
-        this.flow.updateSubtitlePreview();
+        this.historyIndex--;
+        const snapshot = JSON.parse(this.history[this.historyIndex]);
+        this.historyDirty = false;
+        this.restoreHistoryState(snapshot);
         window.app?.showToast?.(window.i18n.t('subtitle.editor.undo_done'), 'info');
-        console.log(`[SubtitleEditor] Undo done for track ${track.name}. Remaining history:`, track.historyIndex + 1);
+        console.log('[SubtitleEditor] Undo done. Remaining history:', this.historyIndex + 1);
     }
 
     redo() {
-        const track = this.getActiveTrack();
-        if (!track || !track.history || track.historyIndex >= track.history.length - 1) {
+        if (this.historyIndex >= this.history.length - 1) {
             window.app?.showToast?.(window.i18n.t('subtitle.editor.no_more_redo'), 'warning');
             return;
         }
 
-        track.historyIndex++;
-        const snapshot = JSON.parse(track.history[track.historyIndex]);
-        
-        // 重要：同步更新编辑器引用和轨道引用
-        this.subtitles = snapshot;
-        track.subtitles = snapshot;
-        track.historyDirty = false;
-
-        this.render();
-        this.flow.updateSubtitlePreview();
+        this.historyIndex++;
+        const snapshot = JSON.parse(this.history[this.historyIndex]);
+        this.historyDirty = false;
+        this.restoreHistoryState(snapshot);
         window.app?.showToast?.(window.i18n.t('subtitle.editor.redo_done'), 'info');
-        console.log(`[SubtitleEditor] Redo done for track ${track.name}. Index:`, track.historyIndex);
+        console.log('[SubtitleEditor] Redo done. Index:', this.historyIndex);
     }
 }
 

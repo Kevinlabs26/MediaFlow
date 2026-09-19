@@ -28,6 +28,14 @@
     "badge_free": "永久免費",
     "badge_opensource": "Apache 2.0 開源",
     "badge_nolock": "無功能鎖定",
-    "scan": "手機掃碼捐贈"
+    "scan": "手機掃碼捐贈",
+    "updateWelcome": {
+      "title": "歡迎使用 MediaFlow",
+      "versionMessage": "已更新至 v{version}，感謝你的支持。",
+      "methodsLabel": "贊助方式",
+      "qrAlt": "贊助 QR Code",
+      "open": "開啟贊助頁面",
+      "done": "開始使用"
+    }
   }
 }

@@ -156,6 +156,34 @@ describe('SubtitleEditorActionHandler single-line review actions', () => {
         expect(window.app.showToast).toHaveBeenCalledWith('Subtitle re-recognized and re-translated', 'success');
     });
 
+    test('async translation updates the same subtitle after list order changes', async () => {
+        let resolveTranslation;
+        const translationPromise = new Promise((resolve) => { resolveTranslation = resolve; });
+        const first = { id: 's1', originalText: 'first', translatedText: 'old' };
+        const second = { id: 's2', originalText: 'second', translatedText: 'other' };
+        const editor = {
+            subtitles: [first, second],
+            getOriginalText: jest.fn((sub) => sub.originalText),
+            getTranslatedText: jest.fn((sub) => sub.translatedText),
+            updateSubtitleText: jest.fn(),
+            render: jest.fn(),
+            addToHistory: jest.fn(),
+            ensureHistoryBaseline: jest.fn()
+        };
+        const handler = new window.SubtitleEditorActionHandler(editor);
+        handler.flow = {
+            service: { retranslate: jest.fn(() => translationPromise) },
+            targetLanguage: { value: 'en' }
+        };
+
+        const pending = handler.retranslate(0);
+        editor.subtitles.reverse();
+        resolveTranslation('new translation');
+        await pending;
+
+        expect(editor.updateSubtitleText).toHaveBeenCalledWith(1, 'first', 'new translation');
+    });
+
     test('deleteSubtitle removes the line immediately without confirmation', async () => {
         window.app.showConfirm = jest.fn();
 

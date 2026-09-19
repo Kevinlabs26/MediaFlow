@@ -392,6 +392,7 @@
       "cancelBtn": "Cancelar",
       "changePath": "Cambiar",
       "typeVideoAudio": "Video + Voz AI",
+      "typeVideoOriginal": "Video + audio original + subtítulos",
       "typeVideoOnly": "Solo video (Silencio)",
       "typeAudioOnly": "Solo audio (MP3)",
       "precheck_title": "Comprobación previa al quemado ({{count}} líneas)",

@@ -392,6 +392,7 @@
       "cancelBtn": "Abbrechen",
       "changePath": "Ändern",
       "typeVideoAudio": "Video + KI-Stimme",
+      "typeVideoOriginal": "Video + Originalton + Untertitel",
       "typeVideoOnly": "Nur Video (Stumm)",
       "typeAudioOnly": "Nur Audio (MP3)",
       "precheck_title": "Prüfung vor dem Einbrennen ({{count}} Einträge)",

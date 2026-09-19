@@ -55,7 +55,8 @@ class SubtitlePreviewHandler {
             }
             #subtitle-bounding-box.editing-mode {
                 cursor: default;
-                background: transparent;
+                background: rgba(0, 0, 0, 0.28);
+                box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2), 0 4px 14px rgba(0, 0, 0, 0.35);
             }
 
             /* 拉伸手柄 */
@@ -82,10 +83,13 @@ class SubtitlePreviewHandler {
             #subtitle-bounding-box textarea.subtitle-inline-ta {
                 width: 100%; height: 100%;
                 background: transparent; border: none; outline: none;
-                resize: none; cursor: text; overflow: visible;
+                resize: none; cursor: text; overflow: hidden;
                 white-space: pre-wrap; word-break: break-word;
                 box-sizing: border-box;
                 user-select: text; -webkit-user-select: text;
+                position: relative; z-index: 1001;
+                -webkit-text-fill-color: currentColor !important;
+                caret-color: currentColor;
             }
             .subtitle-mirror-text {
                 width: 100%; height: 100%;
@@ -195,7 +199,7 @@ class SubtitlePreviewHandler {
                     }
                     
                     console.log('[SubtitlePreview] Requesting editor focus for index:', index);
-                    this.flow.editor.focusSubtitle(index);
+                    this.flow.editor.focusSubtitle(index, false, false);
                 }
             }
         });
@@ -267,8 +271,8 @@ class SubtitlePreviewHandler {
         const wrapperRect = wrapperEl?.getBoundingClientRect();
         const usesCustomLayout = wrapperEl?.style?.transform?.includes('translate(-50%, -50%)');
         const wrapperWidth = usesCustomLayout ? (wrapperRect?.width || 0) : 0;
-        const boxW = Math.max(spanRect.width / scaleX + 16, wrapperWidth / scaleX || 0);
-        const boxH = spanRect.height / scaleY + 32;
+        const boxW = Math.max(spanRect.width / scaleX, wrapperWidth / scaleX || 0);
+        const boxH = spanRect.height / scaleY;
 
         const box = document.createElement('div');
         box.id = 'subtitle-bounding-box';
@@ -276,13 +280,9 @@ class SubtitlePreviewHandler {
         // 【关键修复】使用渲染同款逻辑反推坐标
         const rawLeft = usesCustomLayout
             ? ((wrapperRect.left - overlayRect.left) / scaleX)
-            : ((spanRect.left - overlayRect.left) / scaleX - 8);
-        const rawTop = (spanRect.top - overlayRect.top) / scaleY - 16;
-        const leftPx = Math.max(0, Math.min(rawLeft, Math.max(0, overlayW - boxW))); /*
-            : (spanRect.top - this.subtitleOverlay.getBoundingClientRect().top - (32-16)/2); // 非custom模式保留视觉对齐
-
-        
-        */
+            : ((spanRect.left - overlayRect.left) / scaleX);
+        const rawTop = (spanRect.top - overlayRect.top) / scaleY;
+        const leftPx = Math.max(0, Math.min(rawLeft, Math.max(0, overlayW - boxW)));
         const topPx = Math.max(0, Math.min(rawTop, Math.max(0, overlayH - boxH)));
         box.style.width  = boxW + 'px';
         box.style.height = boxH + 'px';
@@ -323,7 +323,7 @@ class SubtitlePreviewHandler {
             background: ${cs.backgroundColor !== 'rgba(0, 0, 0, 0)' ? cs.backgroundColor : 'transparent'};
             padding: ${cs.padding};
         `;
-        mirror.innerHTML = text.replace(/\n/g, '<br>');
+        mirror.textContent = text;
         mirror.addEventListener('dblclick', (e) => {
             e.stopPropagation();
             console.log('[SubtitlePreview] Mirror text dblclick detected, syncing...');
@@ -331,7 +331,7 @@ class SubtitlePreviewHandler {
             
             // 同步跳转右侧字幕列表
             if (this.flow.editor) {
-                this.flow.editor.focusSubtitle(this._selectedIndex);
+                this.flow.editor.focusSubtitle(this._selectedIndex, false, false);
             }
             
             mirror.remove();
@@ -342,13 +342,16 @@ class SubtitlePreviewHandler {
     _activateTextarea(box, anchorSpan, sub, index, cs) {
         this._isInlineEditing = true;
         const text = this._getCurrentText(sub);
+        const editorColor = cs.color && cs.color !== 'rgba(0, 0, 0, 0)' ? cs.color : '#ffffff';
         const ta = document.createElement('textarea');
         ta.className = 'subtitle-inline-ta';
         ta.value = text;
+        ta.spellcheck = false;
         ta.style.cssText = `
             font-size: ${cs.fontSize}; font-family: ${cs.fontFamily};
             font-weight: ${cs.fontWeight}; font-style: ${cs.fontStyle};
-            color: ${cs.color}; text-align: ${cs.textAlign};
+            color: ${editorColor}; -webkit-text-fill-color: ${editorColor}; caret-color: ${editorColor};
+            text-align: ${cs.textAlign};
             line-height: ${cs.lineHeight}; letter-spacing: ${cs.letterSpacing};
             text-shadow: ${cs.textShadow}; -webkit-text-stroke: ${cs.webkitTextStroke};
             background: ${cs.backgroundColor !== 'rgba(0, 0, 0, 0)' ? cs.backgroundColor : 'transparent'};
@@ -389,6 +392,7 @@ class SubtitlePreviewHandler {
     _commitEdit(ta, sub, index, baseFontSize, box, anchorSpan) {
         const editor = this.flow.editor;
         if (editor) {
+            editor.ensureHistoryBaseline?.();
             let original = sub.originalText || '', translated = sub.translatedText || '';
             const fullText = ta.value.trim();
             const displayMode = this.getOverlayDisplayMode();
@@ -400,8 +404,12 @@ class SubtitlePreviewHandler {
             } else if (displayMode === 'original') original = fullText;
             else { if (sub.translatedText) translated = fullText; else original = fullText; }
 
-            this._syncPositionFromBox(box, anchorSpan, baseFontSize);
-            editor.updateSubtitleText(index, original, translated);
+            const currentIndex = editor.subtitles.indexOf(sub);
+            if (currentIndex !== -1) {
+                this._syncPositionFromBox(box, anchorSpan, baseFontSize);
+                editor.updateSubtitleText(currentIndex, original, translated);
+                editor.addToHistory?.();
+            }
         }
         this._destroyBoundingBox();
     }
@@ -419,13 +427,14 @@ class SubtitlePreviewHandler {
         const centerY = top  + h / 2;
 
         const s = this.styleManager.currentStyle;
-        s.marginH = Math.max(0, Math.min(100, Math.round((centerX / overlayW) * 100)));
-        s.marginV = Math.max(0, Math.min(100, Math.round((centerY / overlayH) * 100)));
+        const toPercent = (value, size) => Math.round((value / size) * 10000) / 100;
+        s.marginH = Math.max(0, Math.min(100, toPercent(centerX, overlayW)));
+        s.marginV = Math.max(0, Math.min(100, toPercent(centerY, overlayH)));
         s.position = 'custom';
 
         // 同步宽度 (Wrap Width)
         if (this._boxWasResized) {
-            s.wrapWidth = Math.min(100, Math.max(10, Math.round((w / overlayW) * 100)));
+            s.wrapWidth = Math.min(100, Math.max(10, toPercent(w, overlayW)));
         }
 
         // 同步字号 (针对拖拽缩放)
@@ -475,9 +484,10 @@ class SubtitlePreviewHandler {
 
     _getCurrentText(sub) {
         const displayMode = this.getOverlayDisplayMode();
-        if (displayMode === 'bilingual') return sub.translatedText ? `${sub.originalText || ''}\n${sub.translatedText}` : (sub.originalText || sub.text || '');
+        const translated = window.SubtitleUtils?.getDisplayTranslatedText?.(sub) || sub.translatedText || '';
+        if (displayMode === 'bilingual') return translated ? `${sub.originalText || sub.text || ''}\n${translated}` : (sub.originalText || sub.text || '');
         if (displayMode === 'original') return sub.originalText || sub.text || '';
-        return sub.translatedText || sub.originalText || sub.text || '';
+        return translated || sub.originalText || sub.text || '';
     }
 
     _bindResizeHandle(handle, box, cs) {
@@ -488,15 +498,22 @@ class SubtitlePreviewHandler {
             const { scaleX, scaleY } = this._getOverlayMetrics();
             const startLeft = parseFloat(box.style.left) || 0, startTop = parseFloat(box.style.top) || 0;
             const startW = box.offsetWidth, startH = box.offsetHeight;
+            const minW = Math.max(20, Math.min(60, startW));
+            const minH = Math.max(12, Math.min(40, startH));
             const startFontSize = parseFloat(cs.fontSize), ta = box.querySelector('textarea.subtitle-inline-ta');
+            let historyStarted = false;
 
             const onMove = (me) => {
+                if (!historyStarted && !this._isInlineEditing) {
+                    this.flow.editor?.ensureHistoryBaseline?.();
+                    historyStarted = true;
+                }
                 const dx = (me.clientX - startX) / scaleX, dy = (me.clientY - startY) / scaleY;
                 let nL = startLeft, nT = startTop, nW = startW, nH = startH;
-                if (dir.includes('e')) nW = Math.max(60, startW + dx);
-                if (dir.includes('s')) nH = Math.max(40, startH + dy);
-                if (dir.includes('w')) { nW = Math.max(60, startW - dx); nL = startLeft + dx; }
-                if (dir.includes('n')) { nH = Math.max(40, startH - dy); nT = startTop + dy; }
+                if (dir.includes('e')) nW = Math.max(minW, startW + dx);
+                if (dir.includes('s')) nH = Math.max(minH, startH + dy);
+                if (dir.includes('w')) { nW = Math.max(minW, startW - dx); nL = startLeft + startW - nW; }
+                if (dir.includes('n')) { nH = Math.max(minH, startH - dy); nT = startTop + startH - nH; }
                 box.style.width = nW + 'px'; box.style.height = nH + 'px';
                 box.style.left = nL + 'px'; box.style.top = nT + 'px';
 
@@ -512,7 +529,8 @@ class SubtitlePreviewHandler {
                 document.removeEventListener('mousemove', onMove); 
                 document.removeEventListener('mouseup', onUp); 
                 if (this._boxWasResized && !this._isInlineEditing) {
-                    this._syncPositionFromBox(box, this._selectedSpan, startFontSize); 
+                    this._syncPositionFromBox(box, this._selectedSpan, startFontSize);
+                    this.flow.editor?.addToHistory?.();
                 }
             };
             document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
@@ -528,6 +546,7 @@ class SubtitlePreviewHandler {
             const startL = parseFloat(box.style.left) || 0, startT = parseFloat(box.style.top) || 0;
             let moved = false;
             const onMove = (me) => {
+                if (!moved) this.flow.editor?.ensureHistoryBaseline?.();
                 moved = true;
                 box.style.left = (startL + (me.clientX - startX) / scaleX) + 'px';
                 box.style.top = (startT + (me.clientY - startY) / scaleY) + 'px';
@@ -536,6 +555,7 @@ class SubtitlePreviewHandler {
                 document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp);
                 if (moved && !this._isInlineEditing) {
                     this._syncPositionFromBox(box, anchorSpan);
+                    this.flow.editor?.addToHistory?.();
                     return;
                 }
 
@@ -751,18 +771,18 @@ class SubtitlePreviewHandler {
         const shP = (s.shadows || []).map(sh => `${sh.x*scale}px ${sh.y*scale}px ${sh.blur*scale}px ${sh.color}`);
         cssEx.push(shP.length ? `text-shadow: ${shP.join(', ')}` : 'text-shadow: none');
 
-        let bg = ''; if (s.enableBackground) {
+        let bg = 'padding: 0; border-radius: 0;'; if (s.enableBackground) {
             const h = s.bgColor || '#000', r = parseInt(h.slice(1,3),16), g = parseInt(h.slice(3,5),16), b = parseInt(h.slice(5,7),16);
             bg = `background-color: rgba(${r},${g},${b},${(s.bgOpacity||100)/100}); padding: 0.15em 0.4em; border-radius: ${4*scale}px; box-decoration-break: clone; -webkit-box-decoration-break: clone;`;
         }
 
         const pos = s.position || '2'; let wSt;
-        if (pos === 'custom') wSt = `position: absolute; left: ${s.marginH}%; top: ${s.marginV}%; transform: translate(-50%, -50%); width: ${wrapW}%; max-width: ${wrapW}%; text-align: ${s.textAlign || 'center'}; white-space: pre-wrap; pointer-events: none;`;
+        if (pos === 'custom') wSt = `position: absolute; left: ${Number(s.marginH ?? 50)}%; top: ${Number(s.marginV ?? 50)}%; transform: translate(-50%, -50%); width: ${wrapW}%; max-width: ${wrapW}%; text-align: ${s.textAlign || 'center'}; white-space: pre-wrap; pointer-events: none;`;
         else {
             const al = { '1':'left','4':'left','7':'left','3':'right','6':'right','9':'right' }[pos] || 'center';
             wSt = `position: absolute; width: 100%; left: 0; text-align: ${al}; padding: 0 ${(100-wrapW)/2}%; pointer-events: none; white-space: pre-wrap;`;
-            if (['7','8','9'].includes(pos)) wSt += ` top: ${s.marginV||10}%;`;
-            else if (['1','2','3'].includes(pos)) wSt += ` bottom: ${s.marginV||10}%;`;
+            if (['7','8','9'].includes(pos)) wSt += ` top: ${Number(s.marginV ?? 10)}%;`;
+            else if (['1','2','3'].includes(pos)) wSt += ` bottom: ${Number(s.marginV ?? 10)}%;`;
             else wSt += ' top: 50%; transform: translateY(-50%);';
         }
 
@@ -774,7 +794,7 @@ class SubtitlePreviewHandler {
         const animDur = (s.animationDuration || 300) + 'ms';
         const subId = content && typeof content === 'object' ? (content.id || '') : '';
 
-        overlay.innerHTML = `<div class="subtitle-draggable" data-track-id="${trackId||''}" style="${wSt}"><span class="subtitle-preview-text ${animClass}" data-sub-id="${subId}" style="display: inline-block; --anim-dur: ${animDur}; font-family: '${s.fontFamily}', sans-serif; font-size: ${fs}px; font-weight: ${s.fontBold?'bold':'normal'}; font-style: ${s.fontItalic?'italic':'normal'}; color: ${s.fontColor}; ${cssEx.join('; ')}; ${bg} line-height: ${s.lineHeight||1.4}; letter-spacing: ${(s.letterSpacing||0)*scale}px; pointer-events: auto; user-select: none; cursor: pointer; word-break: break-word; overflow-wrap: anywhere; white-space: pre-wrap; max-width: 100%;">${htmlText}</span></div>`;
+        overlay.innerHTML = `<div class="subtitle-draggable" data-track-id="${trackId||''}" style="${wSt}"><span class="subtitle-preview-text ${animClass}" data-sub-id="${subId}" style="display: inline-block; box-sizing: border-box; --anim-dur: ${animDur}; font-family: '${s.fontFamily}', sans-serif; font-size: ${fs}px; font-weight: ${s.fontBold?'bold':'normal'}; font-style: ${s.fontItalic?'italic':'normal'}; color: ${s.fontColor}; ${cssEx.join('; ')}; ${bg} line-height: ${s.lineHeight||1.4}; letter-spacing: ${(s.letterSpacing||0)*scale}px; pointer-events: auto; user-select: none; cursor: pointer; word-break: break-word; overflow-wrap: anywhere; white-space: pre-wrap; max-width: 100%;">${htmlText}</span></div>`;
     }
 }
 window.SubtitlePreviewHandler = SubtitlePreviewHandler;

@@ -392,6 +392,7 @@
       "cancelBtn": "Cancelar",
       "changePath": "Alterar",
       "typeVideoAudio": "Vídeo + Voz AI",
+      "typeVideoOriginal": "Vídeo + áudio original + legendas",
       "typeVideoOnly": "Apenas vídeo (Mudo)",
       "typeAudioOnly": "Apenas áudio (MP3)",
       "precheck_title": "Verificação antes de gravar ({{count}} linhas)",

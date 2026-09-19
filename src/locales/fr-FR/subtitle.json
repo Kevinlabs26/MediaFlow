@@ -772,6 +772,7 @@
       "cancelBtn": "Annuler",
       "changePath": "Modifier",
       "typeVideoAudio": "Vidéo + Doublage IA",
+      "typeVideoOriginal": "Vidéo + audio original + sous-titres",
       "typeVideoOnly": "Vidéo seule (Muet)",
       "typeAudioOnly": "Audio seul (MP3)",
       "precheck_title": "Contrôle avant gravure ({{count}} lignes)",

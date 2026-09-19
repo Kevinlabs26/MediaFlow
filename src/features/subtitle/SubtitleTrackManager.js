@@ -214,7 +214,8 @@ class SubtitleTrackManager {
      * 婵犵數濮烽弫鎼佸磿閹寸姷绀婇柍褜鍓氶妵鍕即閸℃顏柛娆忕箻閺岋綁骞囬浣瑰創濠碘槅鍋呴敃銏ゅ蓟閻旈鏆嬮柟宄拌嫰椤忣厾绱撻崒姘偓褰掑箲閸パ屾綎?     * @param {string} name 
      * @param {string} type 
      */
-    addTrack(name, type = 'subtitle') {
+    addTrack(name, type = 'subtitle', { recordHistory = true } = {}) {
+        if (recordHistory) this.flow.editor?.ensureHistoryBaseline?.();
         const track = {
             id: Date.now(),
             name: name || window.i18n.t('subtitle.messages.trackTypes.defaultTrackName', { n: this.tracks.length + 1 }),
@@ -233,13 +234,14 @@ class SubtitleTrackManager {
             historyIndex: -1
         };
         this.tracks.push(track);
-        this.flow.editor?.addToHistory();
         
         if (type !== 'audio') {
             this.setActiveTrack(track.id);
         } else {
             this.renderTracks();
         }
+        if (recordHistory) this.flow.editor?.addToHistory();
+        return track;
     }
 
     /**
@@ -249,10 +251,9 @@ class SubtitleTrackManager {
     addAudioTrackFromTTS(result, originalSubtitles) {
         if (!result || !result.path) return;
 
+        this.flow.editor?.ensureHistoryBaseline?.();
         const trackName = `TTS - ${new Date().toLocaleTimeString()}`;
-        this.addTrack(trackName, 'audio');
-        
-        const newTrack = this.tracks[this.tracks.length - 1];
+        const newTrack = this.addTrack(trackName, 'audio', { recordHistory: false });
         newTrack.ttsAudioPath = result.path;
 
         // 缂傚倸鍊烽懗鍫曞磻閹炬剚鐔嗘俊顖涙た濞堢晫绱掔€ｎ偒鍎ラ柣鎺嶇矙閺屻劑鎮㈤崫鍕戙垻绱掗埀顒€鐣濋崟顒傚幐閻庡箍鍎卞ú锕傚汲閳哄啰纾奸柟閭﹀弾濞堟粓鏌熼绛嬬劸缂佺姵鐩獮姗€骞栭鐕傜磼闂傚倷绀侀幖顐⑽涚€电绶ゅù鐘差儏閻撴繈鏌熼崜褏甯涢柛瀣ㄥ姂閺屾稑鈹戦崟顐㈠閻庣數澧楅幐缁樼┍婵犲浂鏁冮柕鍫濇媼閺嗩參姊洪幖鐐插婵炲绋戝畵鍕偡濠婂啰绠茬紒鍌氱Ч楠炴牗鎷呴崫銉Ч婵＄偑鍊曠换鎰洪妸鈹у洭鎮ч崼銏㈩啎闂佺懓顕崑鐐典焊椤撶倣鏃堟偐閾忣偄鈧劙鏌熼鈧紓姘端囪ぐ鎺撶厽婵炴垵宕▍宥団偓娈垮枟閹告娊骞冨鍫濆耿婵°倓绶￠崯鍛存⒒娴ｅ憡璐￠柛妯犲洦鍋ら柕濞垮労濞兼牠鎮归崶銊с偞闁哄妫冮弻鐔告綇閸撗呮殸缂備讲鍋撻柛顐ゅ枂娴滄粓鐓崶銊﹀鞍鐎瑰憡绻堥幃?
@@ -287,6 +288,7 @@ class SubtitleTrackManager {
 
         this.renderTracks();
         if (this.flow.timeline) this.flow.timeline.render();
+        this.flow.editor?.addToHistory();
         
         window.app?.showToast?.(window.i18n.t('subtitle.messages.audioTrackCreated'), 'success');
     }
@@ -298,9 +300,8 @@ class SubtitleTrackManager {
     removeTrack(id) {
         const index = this.tracks.findIndex(t => t.id === id);
         if (index > -1) {
-            this.flow.editor?.addToHistory();
+            this.flow.editor?.ensureHistoryBaseline?.();
             this.tracks.splice(index, 1);
-            this.flow.editor?.addToHistory();
             if (this.activeTrackId === id && this.tracks.length > 0) {
                 this.setActiveTrack(this.tracks[0].id);
             } else if (this.tracks.length === 0) {
@@ -311,13 +312,14 @@ class SubtitleTrackManager {
             } else {
                 this.renderTracks();
             }
+            this.flow.editor?.addToHistory();
         }
     }
 
     /**
      * 婵犵數濮烽弫鎼佸磻閻愬搫绠伴柟闂寸缁犵娀鏌熼悧鍫熺凡闁绘挻锕㈤弻鈥愁吋鎼粹€崇缂備胶濮伴崕鐢稿蓟瀹ュ牜妾ㄩ梺鍛婃尵閸犲酣顢氶敐澶婂瀭妞ゆ劑鍨荤粣鐐烘煙閼圭増褰х紒杈ㄦ礈濡叉劙鏁冮崒娑掓嫽?     */
     clearAllTracks() {
-        this.flow.editor?.addToHistory();
+        this.flow.editor?.ensureHistoryBaseline?.();
         this.tracks = [];
         this.activeTrackId = null;
         this.renderTracks();
@@ -328,7 +330,7 @@ class SubtitleTrackManager {
         }
 
         // Add back default main track
-        this.addDefaultTrack();
+        this.addTrack(window.i18n.t('subtitle.messages.mainTrack'), 'main', { recordHistory: false });
         this.flow.editor?.addToHistory();
     }
 
@@ -336,7 +338,6 @@ class SubtitleTrackManager {
      * 闂傚倷娴囧畷鍨叏瀹曞洨鐭嗗ù锝堫潐濞呯姴霉閻樺樊鍎愰柛瀣典邯閺屾盯鍩勯崘銊︽儧婵炲瓨绮岀紞濠囧蓟閻旂厧绠氱憸宥夊汲鏉堛劊浜滈柕鍫濇噺閸ｈ櫣绱掔紒妯肩畼闁哥姴锕よ灒閺夌偞婢橀ˉ姘攽閻樺灚鏆╅柛瀣☉椤曪絿鎹勬担鏇秮楠炴帡骞嬮鐐寸暭婵犵數鍋涘Ο濠冪濠靛鍊?     * @param {number} id 
      */
     setActiveTrack(id) {
-        this.flow.editor?.addToHistory(true);
         this.activeTrackId = id;
 
         const track = this.tracks.find(t => t.id === id);
@@ -370,7 +371,7 @@ class SubtitleTrackManager {
     toggleVisibility(id) {
         const track = this.tracks.find(t => t.id === id);
         if (track) {
-            this.flow.editor?.addToHistory();
+            this.flow.editor?.ensureHistoryBaseline?.();
             track.visible = !track.visible;
             this.flow.editor?.addToHistory();
             this.renderTracks();
@@ -385,7 +386,7 @@ class SubtitleTrackManager {
     toggleLock(id) {
         const track = this.tracks.find(t => t.id === id);
         if (track) {
-            this.flow.editor?.addToHistory();
+            this.flow.editor?.ensureHistoryBaseline?.();
             track.locked = !track.locked;
             this.flow.editor?.addToHistory();
             this.renderTracks();
@@ -414,7 +415,7 @@ class SubtitleTrackManager {
         if (!track || track.locked) return false;
         if (Math.abs(offsetSeconds) < 0.001) return false;
 
-        this.flow.editor?.addToHistory(); // 闂傚倸鍊烽懗鍫曞箠閹剧粯鍊舵繝闈涚墢閻挾鈧娲栧ú銊х矆婵犲洦鐓涢柛鎰╁妿婢ф洜绱掗埀顒勫醇閳垛晛浜炬鐐茬仢閸旀岸鎮楀鐓庢灓缂侇喚绮粋鎺斺偓锝庡亜閳?
+        this.flow.editor?.ensureHistoryBaseline?.();
         track.subtitles.forEach(sub => {
             sub.start = Math.max(0, sub.start + offsetSeconds);
             sub.end = Math.max(sub.start + 0.1, sub.end + offsetSeconds);
@@ -436,6 +437,7 @@ class SubtitleTrackManager {
 
         if (!fromTrack || !toTrack || fromTrack === toTrack) return null;
         if (fromTrack.locked || toTrack.locked) return null;
+        this.flow.editor?.ensureHistoryBaseline?.();
 
         // 1. 濠电姷鏁搁崑娑㈩敋椤撶喐鍙忛悗鐢电《閸嬫挸鈽夐幒鎾寸彇闂佸吋妞芥禍鍫曘€佸▎鎾村殟闁靛鍎哄顖炴⒒娓氣偓濞佳嗗闂佸搫鎳忛悷锔剧博閻旂厧鍗抽柕蹇ョ磿閸樺崬鈹戦悙鍙夘棡闁告梹顨嗛弲鍫曨敂閸喓鍘遍梺闈涚墕妤犳悂鐛鈧弻宥堫檨闁告挻姘ㄧ划娆撳箳濡炲皷鍋撻崘顔煎窛妞ゆ牗绮堢粭?
         const [subtitle] = fromTrack.subtitles.splice(subtitleIndex, 1);
@@ -456,7 +458,11 @@ class SubtitleTrackManager {
 
         if (this.flow.activeTrackId === toTrackId) {
             this.flow.editor?.setActive(newIndex, true);
+        } else if (this.flow.activeTrackId === fromTrackId) {
+            this.flow.editor?.render(fromTrack.subtitles);
         }
+
+        this.flow.editor?.addToHistory();
 
         return { newIndex };
     }
@@ -578,21 +584,39 @@ class SubtitleTrackManager {
                     // Update Active track if possible, or Main track
                     const activeTrack = this.tracks.find(t => t.id === this.activeTrackId);
                     if (activeTrack) {
+                        if (activeTrack.subtitles?.length) {
+                            const key = 'subtitle.confirm.import_replace';
+                            const translated = window.i18n.t(key);
+                            const confirmed = window.app?.showConfirm
+                                ? await window.app.showConfirm(
+                                    translated && translated !== key
+                                        ? translated
+                                        : 'The current track already has subtitles. Replace them with the imported file?'
+                                )
+                                : window.confirm('Replace the current track subtitles?');
+                            if (!confirmed) return;
+                        }
+                        this.flow.editor?.ensureHistoryBaseline?.();
                         activeTrack.subtitles = subtitles;
                         window.app?.showToast?.(window.i18n.t('subtitle.messages.importDone', { count: subtitles.length }), 'success');
                         // Refresh Editor if active
                         if (this.activeTrackId === activeTrack.id && this.flow.editor) {
                             this.flow.editor.render(subtitles);
                         }
+                        this.flow.editor?.addToHistory();
                     } else {
                         // Fallback to main
                         const mainTrack = this.tracks.find(t => t.type === 'main');
                         if (mainTrack) {
+                            this.flow.editor?.ensureHistoryBaseline?.();
                             mainTrack.subtitles = subtitles;
                             window.app?.showToast?.(window.i18n.t('subtitle.messages.importDoneMain', { count: subtitles.length }), 'success');
                             this.setActiveTrack(mainTrack.id);
+                            this.flow.editor?.addToHistory();
                         }
                     }
+                } else {
+                    throw new Error('No supported subtitle cues were found in this file.');
                 }
 
             } catch (e) {

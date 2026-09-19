@@ -1,6 +1,6 @@
 {
     "name": "mediaflow",
-    "version": "2.4.7",
+    "version": "2.4.12",
     "description": "Media capture, audio-to-text conversion, and image compression — a multifunctional media tool.",
     "main": "main.js",
     "scripts": {

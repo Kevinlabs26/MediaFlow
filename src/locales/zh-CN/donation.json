@@ -31,6 +31,14 @@
     "promptMessage": "MediaFlow 对所有人免费开放。如果它帮到了你，可以支持一下项目 ☕",
     "promptSupport": "支持项目",
     "promptLater": "以后再说",
-    "scan": "手机扫码捐赠"
+    "scan": "手机扫码捐赠",
+    "updateWelcome": {
+      "title": "欢迎使用 MediaFlow",
+      "versionMessage": "已更新到 v{version}，感谢你的支持。",
+      "methodsLabel": "赞助方式",
+      "qrAlt": "赞助二维码",
+      "open": "打开赞助页面",
+      "done": "开始使用"
+    }
   }
 }

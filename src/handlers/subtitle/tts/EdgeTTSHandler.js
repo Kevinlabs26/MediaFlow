@@ -70,8 +70,6 @@ class EdgeTTSHandler {
                 pushCandidate('py', [`-${version}`], version);
             });
             pushCandidate('python', [], 'default');
-            pushCandidate('C:\\Users\\Alexandre\\AppData\\Local\\Programs\\Python\\Python311\\python.exe', [], '3.11-direct');
-            pushCandidate('C:\\Users\\Alexandre\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', [], '3.13-direct');
         } else {
             pushCandidate('python3', [], 'default');
             pushCandidate('python', [], 'fallback');
@@ -104,7 +102,20 @@ class EdgeTTSHandler {
         }
 
         const fallbackPython = await demucsHandler.findPython();
-        return fallbackPython;
+        const fallbackResult = await this.runProcess(
+            fallbackPython.cmd,
+            [...fallbackPython.args, '-c', 'import edge_tts; print("OK")'],
+            { timeoutMs: 10000 }
+        );
+        if (fallbackResult.code === 0 && fallbackResult.stdout.includes('OK')) {
+            cachedEdgePython = fallbackPython;
+            return fallbackPython;
+        }
+
+        throw new Error(this.buildUserFriendlyError(
+            'Edge TTS unavailable',
+            fallbackResult.stderr || fallbackResult.error?.message || 'No module named edge_tts'
+        ));
     }
 
     async findInstallPython() {
@@ -127,7 +138,7 @@ class EdgeTTSHandler {
             return prefix;
         }
 
-        if (output.includes('No module named edge_tts')) {
+        if (output.includes('No module named') && output.includes('edge_tts')) {
             return 'Edge TTS dependency is missing in the selected Python environment. Please install edge_tts or switch to another TTS engine.';
         }
         if (output.includes('503') || output.includes('Service Unavailable')) {

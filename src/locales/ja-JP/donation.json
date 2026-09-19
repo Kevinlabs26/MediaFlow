@@ -28,6 +28,14 @@
     "badge_free": "Free forever",
     "badge_opensource": "Apache 2.0 ライセンス",
     "badge_nolock": "No locked features",
-    "scan": "スマホでスキャン"
+    "scan": "スマホでスキャン",
+    "updateWelcome": {
+      "title": "MediaFlow へようこそ",
+      "versionMessage": "v{version} に更新されました。ご支援ありがとうございます。",
+      "methodsLabel": "支援方法",
+      "qrAlt": "支援用 QR コード",
+      "open": "支援ページを開く",
+      "done": "始める"
+    }
   }
 }

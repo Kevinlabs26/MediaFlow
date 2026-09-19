@@ -14,12 +14,21 @@ autoUpdater.logger = log;
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
 
+const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
+const FOCUS_CHECK_COOLDOWN_MS = 5 * 60 * 1000;
+let initialized = false;
+let updateCheckTimer = null;
+let updateCheckPromise = null;
+let lastUpdateCheckAt = 0;
+let downloadedUpdateInfo = null;
+
 /**
  * Initialize the Auto Updater
  * @param {BrowserWindow} mainWindow - The main application window to send events to
  */
 function initAutoUpdater(mainWindow) {
-    if (!mainWindow) return;
+    if (!mainWindow || initialized) return;
+    initialized = true;
 
     // --- Updater Event Handlers ---
 
@@ -56,53 +65,72 @@ function initAutoUpdater(mainWindow) {
     });
 
     autoUpdater.on('update-downloaded', (info) => {
-        log.info('Update downloaded. Auto-installing in 2s.', info);
+        log.info('Update downloaded and ready to install.', info);
+        // Keep the result until the renderer asks for it. The download can
+        // finish before the renderer has finished booting and subscribed to
+        // the event, especially on fast/local update sources.
+        downloadedUpdateInfo = info;
 
-        // Notify renderer to show a brief "updating..." state
+        // Let the user choose when to restart; autoInstallOnAppQuit still
+        // installs it automatically on the next normal quit.
         mainWindow.webContents.send('updater:downloaded', info);
-
-        // Auto-close the running app and install the update immediately.
-        setTimeout(() => {
-            try {
-                autoUpdater.quitAndInstall();
-            } catch (e) {
-                log.error('Auto-install failed, will install on app quit instead.', e);
-            }
-        }, 2000);
     });
+
+    const runUpdateCheck = (reason = 'scheduled') => {
+        if (!app.isPackaged) {
+            log.info(`Skipping auto-update check in unpacked/dev mode (${reason}).`);
+            return Promise.resolve(null);
+        }
+        if (updateCheckPromise) return updateCheckPromise;
+
+        lastUpdateCheckAt = Date.now();
+        updateCheckPromise = (reason === 'manual'
+            ? autoUpdater.checkForUpdates()
+            : autoUpdater.checkForUpdatesAndNotify())
+            .catch((error) => {
+                log.error(`Failed to check for updates (${reason}):`, error);
+                return null;
+            })
+            .finally(() => {
+                updateCheckPromise = null;
+            });
+
+        return updateCheckPromise;
+    };
 
     // --- IPC Handlers for User Interaction ---
 
     // Triggered when user clicks "Check for Updates" manually (if you add such button)
     ipcMain.handle('updater:check', async () => {
-        try {
-            return await autoUpdater.checkForUpdates();
-        } catch (e) {
-            log.error('Failed to check for updates manually', e);
-            throw e;
-        }
+        return runUpdateCheck('manual');
     });
+
+    // Renderer startup may happen after update-downloaded. Expose the last
+    // downloaded update so the UI can show the install prompt reliably.
+    ipcMain.handle('updater:get-downloaded', () => downloadedUpdateInfo);
 
     // Triggered when user clicks "Restart Now" on the update prompt
     ipcMain.on('updater:quit-and-install', () => {
         autoUpdater.quitAndInstall();
     });
 
-    // --- Initial Check ---
-    // Check for updates immediately after initialization (with a slight delay to ensure window is ready)
-    setTimeout(async () => {
-        // 🔒 SAFETY: Only check for updates in packaged app to prevent dev freeze
-        if (app.isPackaged) {
-            try {
-                await autoUpdater.checkForUpdatesAndNotify();
-            } catch (e) {
-                log.error('Failed to check for updates on startup:', e);
-                // Silent fail - do not annoy user on startup if network is down
-            }
-        } else {
-            log.info('Skipping auto-update check in unpacked/dev mode.');
+    // Check once after startup, then while the app remains open. A focus check
+    // makes an update visible soon after the user returns to the desktop app.
+    setTimeout(() => runUpdateCheck('startup'), 3000);
+    updateCheckTimer = setInterval(() => runUpdateCheck('interval'), UPDATE_CHECK_INTERVAL_MS);
+    updateCheckTimer.unref?.();
+
+    const handleWindowFocus = () => {
+        if (Date.now() - lastUpdateCheckAt >= FOCUS_CHECK_COOLDOWN_MS) {
+            void runUpdateCheck('focus');
         }
-    }, 3000);
+    };
+    app.on('browser-window-focus', handleWindowFocus);
+    app.once('before-quit', () => {
+        if (updateCheckTimer) clearInterval(updateCheckTimer);
+        updateCheckTimer = null;
+        app.removeListener('browser-window-focus', handleWindowFocus);
+    });
 }
 
 module.exports = { initAutoUpdater };

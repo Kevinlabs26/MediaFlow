@@ -434,7 +434,7 @@ class SubtitleListRenderer {
         };
 
         const hasVideo = !!(this.editor?.flow?.videoFile || this.editor?.flow?.videoPlayer?.src);
-        const showGuidedHeader = !(isTrulyEmpty && hasVideo);
+        const showGuidedHeader = !isTrulyEmpty;
 
         let title;
         let hint;
@@ -680,8 +680,8 @@ class SubtitleListRenderer {
         return this.editor?.getTranslatedText ? this.editor.getTranslatedText(sub) : '';
     }
 
-    normalizeSingleLineText(value) {
-        return String(value || '').replace(/\s*[\r\n]+\s*/g, ' ').trim();
+    normalizeEditableText(value) {
+        return String(value ?? '').replace(/\r/g, '');
     }
 
     updateElement(div, sub, index) {
@@ -718,11 +718,11 @@ class SubtitleListRenderer {
         const transInput = div.querySelector('.translated-text');
         if (originInput) {
             originInput.wrap = 'off';
-            originInput.value = this.normalizeSingleLineText(this.getOriginalText(sub));
+            originInput.value = this.normalizeEditableText(this.getOriginalText(sub));
         }
         if (transInput) {
             transInput.wrap = 'off';
-            transInput.value = this.normalizeSingleLineText(this.getTranslatedText(sub));
+            transInput.value = this.normalizeEditableText(this.getTranslatedText(sub));
         }
 
         // Active 鐘舵€佹洿鏂?
@@ -950,8 +950,8 @@ class SubtitleListRenderer {
         div.dataset.renderMode = this.getRenderModeKey();
         div.draggable = true;
 
-        const originalText = this.normalizeSingleLineText(this.getOriginalText(sub));
-        const translatedText = this.normalizeSingleLineText(this.getTranslatedText(sub));
+        const originalText = this.normalizeEditableText(this.getOriginalText(sub));
+        const translatedText = this.normalizeEditableText(this.getTranslatedText(sub));
         const safeOriginalText = this.escapeHtml(originalText);
         const safeTranslatedText = this.escapeHtml(translatedText);
         const showOrigRow = this.editor.showOriginal ? '' : 'hidden';
@@ -1262,10 +1262,6 @@ class SubtitleListRenderer {
         };
 
         const updateText = () => {
-            [originalInput, translatedInput].forEach((input) => {
-                if (!input) return;
-                input.value = input.value.replace(/[\r\n]+/g, ' ').replace(/^\s+/, '');
-            });
             const idx = getIndex();
             this.editor.updateSubtitleText(idx, originalInput?.value || '', translatedInput ? translatedInput.value : '');
         };
@@ -1295,7 +1291,7 @@ class SubtitleListRenderer {
                     window.app?.showToast?.(window.i18n.t('toast.last_sentence'), 'info');
                 }
             }
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
             }
         };

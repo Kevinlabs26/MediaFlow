@@ -25,6 +25,28 @@
     display: none !important;
 }
 
+/* 空状态不保留隐藏工具栏和滚动区的占位，保证上下留白完全对称。 */
+#page-creator.no-video .page-header {
+    display: none !important;
+}
+
+#page-creator.no-video .page-container {
+    gap: 0;
+}
+
+#page-creator.no-video .workspace-center-pro {
+    padding-top: clamp(16px, 4vh, 40px) !important;
+    padding-bottom: clamp(16px, 4vh, 40px) !important;
+    padding-left: clamp(16px, 3vw, 40px) !important;
+    padding-right: clamp(16px, 3vw, 40px) !important;
+    overflow: hidden !important;
+}
+
+#page-creator.no-video .upload-zone {
+    margin: 0 !important;
+    min-height: 0;
+}
+
 
 
 /* Let .page.active handle display: block */

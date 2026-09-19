@@ -28,6 +28,14 @@
     "badge_free": "Free forever",
     "badge_opensource": "Apache 2.0 라이선스",
     "badge_nolock": "No locked features",
-    "scan": "휴대폰으로 스캔"
+    "scan": "휴대폰으로 스캔",
+    "updateWelcome": {
+      "title": "MediaFlow에 오신 것을 환영합니다",
+      "versionMessage": "v{version}(으)로 업데이트되었습니다. 지원해 주셔서 감사합니다.",
+      "methodsLabel": "후원 방법",
+      "qrAlt": "후원 QR 코드",
+      "open": "후원 페이지 열기",
+      "done": "시작하기"
+    }
   }
 }

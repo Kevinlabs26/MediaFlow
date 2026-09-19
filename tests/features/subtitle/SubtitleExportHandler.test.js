@@ -58,10 +58,11 @@ describe('SubtitleExportHandler', () => {
         expect(mockFlow.showProgress).not.toHaveBeenCalled();
     });
 
-    it('defaults to silent video when dubbing is disabled', () => {
+    it('defaults to original audio when dubbing is disabled', () => {
         const handler = new window.SubtitleExportHandler(mockFlow);
         const options = [
             { value: 'video_audio', disabled: false },
+            { value: 'video_original', disabled: false },
             { value: 'video_only', disabled: false },
             { value: 'audio_only', disabled: false }
         ];
@@ -70,10 +71,10 @@ describe('SubtitleExportHandler', () => {
 
         handler.syncExportTypeAvailability();
 
-        expect(handler.getExportType()).toBe('video_only');
-        expect(handler.typeSelect.value).toBe('video_only');
+        expect(handler.getExportType()).toBe('video_original');
+        expect(handler.typeSelect.value).toBe('video_original');
         expect(options[0].disabled).toBe(true);
-        expect(options[2].disabled).toBe(true);
+        expect(options[3].disabled).toBe(true);
     });
 
     it('shows a warning when no video is selected', async () => {
@@ -101,6 +102,24 @@ describe('SubtitleExportHandler', () => {
 
         expect(window.mediaflow.subtitle.burn).toHaveBeenCalledWith(expect.objectContaining({
             videoPath: '/path/to/test.mp4'
+        }));
+    });
+
+    it('passes the generated TTS path instead of the result object to burn IPC', async () => {
+        const handler = new window.SubtitleExportHandler(mockFlow);
+        handler.enableTTS = { checked: true };
+        mockFlow.ttsHandler = {
+            getSettings: jest.fn().mockReturnValue({ audioMode: 'remove', volume: 80, bgmVolume: 30 }),
+            generateBatch: jest.fn().mockResolvedValue({ path: '/tmp/dub.mp3', words: [] })
+        };
+
+        await handler.runBurnProcess(mockFlow.tracks, {
+            outputDir: '/output',
+            type: 'video_audio'
+        });
+
+        expect(window.mediaflow.subtitle.burn).toHaveBeenCalledWith(expect.objectContaining({
+            ttsSettings: expect.objectContaining({ audioPath: '/tmp/dub.mp3' })
         }));
     });
 

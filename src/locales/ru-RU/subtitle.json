@@ -392,6 +392,7 @@
       "cancelBtn": "Отмена",
       "changePath": "Сменить",
       "typeVideoAudio": "Видео + AI Голос",
+      "typeVideoOriginal": "Видео + оригинальный звук + субтитры",
       "typeVideoOnly": "Только видео (без звука)",
       "typeAudioOnly": "Только аудио (MP3)",
       "precheck_title": "Проверка перед прожигом ({{count}} строк)",

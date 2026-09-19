@@ -139,6 +139,35 @@ describe('SubtitleBatchHandler batch summary', () => {
         }));
     });
 
+    test('passes the generated TTS path into batch burn', async () => {
+        const flow = {
+            videoFile: null,
+            loadVideo: jest.fn(),
+            trackManager: { tracks: [] },
+            tracks: [{ id: 'main', type: 'main', style: {} }],
+            currentStyle: {},
+            styleManager: { currentStyle: {}, blurOriginal: { checked: false } },
+            enableTTS: { checked: true },
+            ttsHandler: {
+                getSettings: jest.fn().mockReturnValue({ audioMode: 'remove', volume: 80, bgmVolume: 30 }),
+                generateBatch: jest.fn().mockResolvedValue({ path: 'C:\\tmp\\dub.mp3', words: [] })
+            }
+        };
+        const handler = new window.SubtitleBatchHandler(flow);
+        const file = {
+            name: 'demo.mp4',
+            path: 'demo.mp4',
+            duration: 2,
+            cachedSubtitles: [{ id: 'a', text: 'hello', start: 0, end: 1 }]
+        };
+
+        await handler.processSingleFileBatch(file, 'C:\\out', jest.fn(), 'burn');
+
+        expect(window.mediaflow.subtitle.burn).toHaveBeenCalledWith(expect.objectContaining({
+            ttsSettings: expect.objectContaining({ audioPath: 'C:\\tmp\\dub.mp3' })
+        }));
+    });
+
     test('routes batch translation through subtitle translation memory resolution', async () => {
         const recognizedSegments = [
             { start: 0, end: 1.2, text: 'Hello there', originalText: 'Hello there' }

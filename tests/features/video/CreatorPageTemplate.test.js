@@ -26,4 +26,10 @@ describe('Creator quick-tools page', () => {
     test('keeps the media metadata toolbar layout', () => {
         expect(css).toMatch(/#page-creator \.video-meta-bar\s*{[^}]*display:\s*flex;/s);
     });
+
+    test('keeps the empty upload workspace vertically balanced', () => {
+        expect(css).toMatch(/#page-creator\.no-video \.page-header\s*{[^}]*display:\s*none\s*!important;/s);
+        expect(css).toMatch(/#page-creator\.no-video \.workspace-center-pro\s*{[^}]*padding-top:\s*clamp\(16px, 4vh, 40px\)\s*!important;[^}]*padding-bottom:\s*clamp\(16px, 4vh, 40px\)\s*!important;/s);
+        expect(css).toMatch(/#page-creator\.no-video \.upload-zone\s*{[^}]*margin:\s*0\s*!important;/s);
+    });
 });

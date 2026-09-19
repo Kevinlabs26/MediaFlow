@@ -30,25 +30,13 @@ class UpdateManager {
         });
 
         // 2. 下载完成，准备安装
-        window.mediaflow.updater.onDownloaded((info) => {
-            console.log('[Update] Version ready to install:', info.version);
-            this.isReady = true;
-            this.updateInfo = info;
+        window.mediaflow.updater.onDownloaded((info) => this._handleDownloaded(info));
 
-            const msg =
-                window.i18n?.t?.('update.downloaded', { version: info.version }) ||
-                `New version v${info.version} is ready to install!`;
-            this.app.showToast(msg, 'success', {
-                sticky: true,
-                action: {
-                    text:
-                        window.i18n?.t?.('update.restartAndInstall') ||
-                        'Restart and update',
-                    callback: () => this.installUpdate()
-                }
-            });
-            this._showUpdateBadge(true);
-        });
+        // The main process may finish downloading before this renderer has
+        // subscribed. Rehydrate the event from the updater state in that case.
+        window.mediaflow.updater.getDownloaded?.()
+            .then((info) => this._handleDownloaded(info))
+            .catch((error) => console.warn('[Update] Could not restore downloaded update:', error));
 
         // 3. 更新出错
         window.mediaflow.updater.onError((err) => {
@@ -57,6 +45,34 @@ class UpdateManager {
         });
 
         console.log('[UpdateManager] Initialized and listening for update events');
+    }
+
+    _handleDownloaded(info) {
+        if (!info || (this.isReady && this.updateInfo?.version === info.version)) return;
+
+        console.log('[Update] Version ready to install:', info.version);
+        this.isReady = true;
+        this.updateInfo = info;
+
+        const msg =
+            window.i18n?.t?.('update.downloaded', { version: info.version }) ||
+            `New version v${info.version} is ready to install!`;
+        this.app.showToast(msg, 'success', {
+            duration: 0,
+            buttons: [
+                {
+                    text:
+                        window.i18n?.t?.('update.restartAndInstall') ||
+                        'Restart and update',
+                    onClick: () => this.installUpdate()
+                },
+                {
+                    text: window.i18n?.t?.('modal.cancel') || 'Later',
+                    onClick: () => {}
+                }
+            ]
+        });
+        this._showUpdateBadge(true);
     }
 
     /**
