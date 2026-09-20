@@ -570,8 +570,11 @@ class SubtitleListRenderer {
             break;
         case 'add':
             // Keep "+" visible: AI mode hides add button in toolbar
-            this.setSubtitleModeRadio('manual');
-            this.editor?.addSubtitle?.();
+            // Switching from AI/import mode already creates the first cue in
+            // SubtitleFlow's mode-change handler. Do not add it a second time.
+            if (!this.setSubtitleModeRadio('manual')) {
+                this.editor?.addSubtitle?.();
+            }
             break;
         case 'clear-media':
             flow?.mediaHandler?.clearMedia?.();
@@ -592,11 +595,13 @@ class SubtitleListRenderer {
 
     setSubtitleModeRadio(mode) {
         const radio = document.querySelector(`input[name="subtitle-mode"][value="${mode}"]`);
-        if (!radio) return;
+        if (!radio) return false;
         if (!radio.checked) {
             radio.checked = true;
             radio.dispatchEvent(new Event('change', { bubbles: true }));
+            return true;
         }
+        return false;
     }
 
     /**

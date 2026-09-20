@@ -147,6 +147,33 @@ describe('SubtitleListRenderer text layout responsiveness', () => {
         expect(renderer.listContent.querySelector('[data-empty-action="add"]')).not.toBeNull();
     });
 
+    test('does not add two subtitles when the empty-state add action switches to manual mode', () => {
+        document.body.innerHTML = `
+            <div id="subtitle-list-container"></div>
+            <input type="radio" name="subtitle-mode" value="ai" checked>
+            <input type="radio" name="subtitle-mode" value="manual">
+        `;
+
+        const addSubtitle = jest.fn();
+        const editor = {
+            viewMode: 'full',
+            textLayoutMode: 'stacked',
+            subtitles: [],
+            flow: {},
+            addSubtitle
+        };
+        const manualRadio = document.querySelector('input[value="manual"]');
+        manualRadio.addEventListener('change', () => {
+            if (editor.subtitles.length === 0) addSubtitle();
+        });
+
+        const renderer = new window.SubtitleListRenderer(editor);
+        renderer.init(document.getElementById('subtitle-list-container'));
+        renderer.handleEmptyAction('add');
+
+        expect(addSubtitle).toHaveBeenCalledTimes(1);
+    });
+
     test('estimates taller rows only for entries that need extra text space', () => {
         const container = document.getElementById('subtitle-list-container');
         Object.defineProperty(container, 'clientWidth', {
